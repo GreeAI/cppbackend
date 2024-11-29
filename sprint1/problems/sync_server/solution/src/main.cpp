@@ -75,7 +75,7 @@ StringResponse HandleRequest(StringRequest&& req) {
     target.erase(0,1);
 
     if(req.method() == http::verb::get) {
-        std::string respons_body = "<strong>Hello, " + target + "</strong>";
+        std::string respons_body = "Hello, " + target;
         return text_response(http::status::ok, respons_body);
     } else if (req.method() == http::verb::head) {
         auto res = text_response(http::status::method_not_allowed, "invalid method");
