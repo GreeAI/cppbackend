@@ -83,7 +83,6 @@ StringResponse HandleRequest(StringRequest&& req) {
         res.set(http::field::allow, "HEAD");
         return res;
     }
-    
     return text_response(http::status::method_not_allowed, "Invalid method");
 }
 
