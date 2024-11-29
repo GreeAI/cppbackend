@@ -84,7 +84,7 @@ StringResponse HandleRequest(StringRequest&& req) {
         return res;
     }
     
-    return text_response(http::status::method_not_allowed, "invalid method");
+    return text_response(http::status::method_not_allowed, "Invalid method");
 }
 
 template<typename RequestHandler>
