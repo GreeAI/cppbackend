@@ -77,13 +77,14 @@ StringResponse HandleRequest(StringRequest&& req) {
     if(req.method() == http::verb::get) {
         std::string respons_body = "Hello, " + target;
         return text_response(http::status::ok, respons_body);
-    } else if (req.method() == http::verb::head) {
-        auto res = text_response(http::status::method_not_allowed, "invalid method");
+    } 
+    else if (req.method() == http::verb::head) {
+        auto res = text_response(http::status::ok, "");
         res.set(http::field::allow, "HEAD");
         return res;
     }
     
-    return text_response(http::status::method_not_allowed, "");
+    return text_response(http::status::method_not_allowed, "invalid method");
 }
 
 template<typename RequestHandler>
