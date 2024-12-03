@@ -88,6 +88,118 @@ private:
     steady_clock::time_point start_time_{steady_clock::now()};
 };
 
+// Функция, которая будет вызвана по окончании обработки заказа
+using OrderHandler = std::function<void(sys::error_code ec, int id, Hamburger* hamburger)>;
+
+class Order : public std::enable_shared_from_this<Order> {
+public:
+    Order(net::io_context& io, int id, bool with_onion, OrderHandler handler)
+        : io_{io}
+        , id_{id}
+        , with_onion_{with_onion}
+        , handler_{std::move(handler)} {
+    }
+
+    // Запускает асинхронное выполнение заказа
+    void Execute() {
+        logger_.LogMessage("Order has been started."sv);
+        RoastCutlet();
+        if (with_onion_) {
+            MarinadeOnion();
+        }
+    }
+
+private:
+    void RoastCutlet() {
+        logger_.LogMessage("Start roasting cutlet"sv);
+        roast_timer_.async_wait([self = shared_from_this()](sys::error_code ec) {
+            self->OnRoasted(ec);
+        });
+    }
+
+    void OnRoasted(sys::error_code ec) {
+        if (ec) {
+            logger_.LogMessage("Roast error : "s + ec.what());
+        } else {
+            logger_.LogMessage("Cutlet has been roasted."sv);
+            hamburger_.SetCutletRoasted();
+        }
+        CheckReadiness(ec);
+    }
+
+    void MarinadeOnion() {
+        logger_.LogMessage("Start marinading onion"sv);
+        marinade_timer_.async_wait([self = shared_from_this()](sys::error_code ec) {
+            self->OnOnionMarinaded(ec);
+        });
+    }
+
+    void OnOnionMarinaded(sys::error_code ec) {
+        if (ec) {
+            logger_.LogMessage("Marinade onion error: "s + ec.what());
+        } else {
+            logger_.LogMessage("Onion has been marinaded."sv);
+            onion_marinaded_ = true;
+        }
+        CheckReadiness(ec);
+    }
+
+    void CheckReadiness(sys::error_code ec) {
+        if(delivered_) {
+            return;
+        }
+        if (ec) {
+            return Deliver(ec);
+        }
+
+        if(CanAddOnion()) {
+            logger_.LogMessage("Add onion"sv);
+            hamburger_.AddOnion();
+        }
+
+        if(IsReadyToPack()) {
+            Pack();
+        }
+    }
+
+    void Deliver(sys::error_code ec) {
+        delivered_ = true;
+
+        handler_(ec, id_, ec ? nullptr : &hamburger_);
+    }
+
+    [[nodiscard]] bool CanAddOnion() const {
+        return hamburger_.IsCutletRoasted() && onion_marinaded_ && !hamburger_.HasOnion();
+    }
+
+    [[nodiscard]] bool IsReadyToPack() const {
+        return hamburger_.IsCutletRoasted() && (!with_onion_ || hamburger_.HasOnion());
+    }
+
+    void Pack() {
+        logger_.LogMessage("Packing"sv);
+
+        auto start = steady_clock::now();
+        while(steady_clock::now() - start < 500ms) {}
+
+        hamburger_.Pack();
+        logger_.LogMessage("Packed"sv);
+
+        Deliver({});
+    }
+ 
+    net::io_context& io_;
+    int id_;
+    bool with_onion_;
+    OrderHandler handler_;
+    Logger logger_{std::to_string(id_)};
+    Timer roast_timer_{io_, 1s};
+    Timer marinade_timer_{io_, 2s};
+    Hamburger hamburger_;
+    bool onion_marinaded_ = false;
+    bool delivered_ = false;
+}; 
+
 class ThreadChecker {
 public:
     explicit ThreadChecker(std::atomic_int& counter)
@@ -119,28 +231,8 @@ public:
 
     int MakeHamburger(bool with_onion, OrderHandler handler) {
         const int order_id = ++next_order_id_;
-        auto hamburger = std::make_shared<Hamburger>();
-        net::dispatch(io_, [hamburger, order_id, handler, with_onion] {
-            try {
-                // Шаг 1: Обжарить котлету
-                hamburger->SetCutletRoasted();
-                
-                // Шаг 2: Добавить лук, если требуется
-                if (with_onion) {
-                    hamburger->AddOnion();
-                }
-
-                // Шаг 3: Упаковать гамбургер
-                hamburger->Pack();
-
-                // Успешное завершение заказа
-                handler({}, order_id, hamburger.get());
-            } catch (const std::exception& e) {
-                // Ошибка обработки заказа
-                handler(make_error_code(std::errc::invalid_argument), order_id, nullptr);
-            }
-        }); 
-            return order_id;
+        std::make_shared<Order>(io_, order_id, with_onion, std::move(handler))->Execute();
+        return order_id;
     }
 
 private:
