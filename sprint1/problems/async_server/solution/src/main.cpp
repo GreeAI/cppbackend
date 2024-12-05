@@ -41,21 +41,20 @@ StringResponse HandleRequest(StringRequest&& req) {
     const auto text_response = [&req](http::status status, std::string_view text) {
         return MakeStringResponse(status, text, req.version(), req.keep_alive());
     };
+    std::string target = std::string(req.target());
+    target.erase(0,1);
 
-    // Здесь можно обработать запрос и сформировать ответ, но пока всегда отвечаем: Hello
-    std::string target_name = std::string(req.target());
-    target_name.erase(0, 1);
     if(req.method() == http::verb::get) {
-        return text_response(http::status::ok, std::string("Hello, " + target_name));
+        std::string respons_body = "Hello, " + target;
+        return text_response(http::status::ok, respons_body);
     } 
     else if (req.method() == http::verb::head) {
         auto res = text_response(http::status::ok, "");
         res.set(http::field::allow, "HEAD");
         return res;
     }
-    return text_response(http::status::method_not_allowed, "");
+    return text_response(http::status::method_not_allowed, "Invalid method");
 }
-
 // Запускает функцию fn на n потоках, включая текущий
 template <typename Fn>
 void RunWorkers(unsigned n, const Fn& fn) {
