@@ -46,7 +46,7 @@ StringResponse HandleRequest(StringRequest&& req) {
     std::string target_name = std::string(req.target());
     target_name.erase(0, 1);
     if(req.method() == http::verb::get) {
-        return text_response(http::status::ok, std::string("Hello " + target_name));
+        return text_response(http::status::ok, std::string("Hello, " + target_name));
     } 
     else if (req.method() == http::verb::head) {
         auto res = text_response(http::status::ok, "");
