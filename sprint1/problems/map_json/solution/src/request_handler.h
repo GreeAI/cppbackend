@@ -65,7 +65,7 @@ public:
             if(req.method() == http::verb::get){
                 if(req.target() == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
-                    const std::string_view respons_body = json_loader::MapIdName(maps);
+                    const std::string respons_body = json_loader::MapIdName(maps);
                     return text_response(http::status::ok, respons_body, ContentType::JSON_HTML);
                 } 
                 else if (req.target().starts_with("/api/v1/maps/")) {
