@@ -99,7 +99,7 @@ const std::string MapIdName(const model::Game::Maps maps) {
     }
 
     const std::string MapFullInfo(const model::Game::Maps maps) {
-        json::array json_array;
+        json::object map_object;
 
         for (const auto& map : maps) {
             auto id = map.GetId();
@@ -107,8 +107,7 @@ const std::string MapIdName(const model::Game::Maps maps) {
             auto roads = map.GetRoads();
             auto buildings = map.GetBuildings();
             auto offices = map.GetOffices();
-
-            json::object map_object;
+            
             map_object["id"] = id.operator*();
             map_object["name"] = name;
             
@@ -151,11 +150,9 @@ const std::string MapIdName(const model::Game::Maps maps) {
                 offices_array.push_back(office_object);
             }
             map_object["offices"] = offices_array;
-
-            json_array.push_back(map_object);
         }
 
-        return json::serialize(json_array);
+        return json::serialize(map_object);
     }
 
     std::string StatusCodeProcessing(int code) {
