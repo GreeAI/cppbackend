@@ -79,8 +79,13 @@ private:
     }
 
     void Close() {
+        using namespace std::literals;
         beast::error_code ec;
         stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+
+        if (ec) {
+            ReportError(ec, "close"sv); // Логирование при ошибки
+        }
     }
 
     void OnWrite(bool close, beast::error_code ec, [[maybe_unused]] std::size_t bytes_written) {
