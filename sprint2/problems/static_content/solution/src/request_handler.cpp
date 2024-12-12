@@ -4,7 +4,7 @@
 #include <fstream>
 
 namespace http_handler {
-    //Разбить на отдельные методы, добавить валидацию путя
+    //Разбить на отдельные методы, добавить валидацию путя. Мои глаза... Рефакторинг всего
     RequestHandler::VariantResponse RequestHandler::HandleRequest(StringRequest&& req) {
         const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type) {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type);
@@ -15,7 +15,6 @@ namespace http_handler {
         try{
             if(req.method() == http::verb::get){
                 std::string decoded = URLDecode(req.target().data());
-                std::cout << decoded;
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
@@ -38,10 +37,7 @@ namespace http_handler {
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
                 else if (StartWithStr(decoded, "/")) {
-                    decoded == "/" or decoded == "" ? decoded = "index.html" : decoded = decoded.substr(1);
-                    if(decoded.empty()) {
-                        return text_response(http::status::not_found, "/", ContentType::TEXT_PLAIN);
-                    }
+                    decoded == "/" || decoded.empty() ? decoded = "index.html" : decoded = decoded.substr(1);
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
