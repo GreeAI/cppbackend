@@ -42,12 +42,10 @@ namespace http_handler {
                     } else {
                         decoded = decoded.substr(1);
                     }
-                    std::cout << decoded << std::endl;
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
-                    std::cout << summary_path;
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
                         return text_response(http::status::not_found, "Need to learn more", ContentType::TEXT_PLAIN);
                     }
