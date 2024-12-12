@@ -38,7 +38,7 @@ namespace http_handler {
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
                 else if (StartWithStr(decoded, "/")) {
-                    decoded == "/" ? decoded = "index.html" : decoded = decoded.substr(1);
+                    decoded == "/" or decoded == "" ? decoded = "index.html" : decoded = decoded.substr(1);
                     if(decoded.empty()) {
                         return text_response(http::status::not_found, "/", ContentType::TEXT_PLAIN);
                     }
