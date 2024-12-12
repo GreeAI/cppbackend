@@ -36,15 +36,20 @@ namespace http_handler {
                     std::string respons_body = json_loader::StatusCodeProcessing(status_code);
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
-                else if (StartWithStr(decoded, "/")) {
-                    decoded == "/" || decoded.empty() ? decoded = "index.html" : decoded = decoded.substr(1);
+                else if (StartWithStr(decoded, "/") || StartWithStr(decoded, "")) {
+                    if(decoded == "/" || decoded.empty()) {
+                        decoded = "index.html";
+                    } else {
+                        decoded = decoded.substr(1);
+                    }
+                    std::cout << decoded << std::endl;
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
+                    std::cout << summary_path;
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        std::string empty_body;
-                        return text_response(http::status::not_found, "/", ContentType::TEXT_PLAIN);
+                        return text_response(http::status::not_found, "Need to learn more", ContentType::TEXT_PLAIN);
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
