@@ -15,7 +15,6 @@ namespace http_handler {
         try{
             if(req.method() == http::verb::get){
                 std::string decoded = URLDecode(req.target().data());
-                std::cout << "decoded: " << decoded << std::endl;
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
@@ -47,8 +46,6 @@ namespace http_handler {
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
-                    std::cout << "Static_path_root_: " << static_path_root_ << std::endl;
-                    std::cout << "summary_path: " << summary_path << std::endl;
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
                         return text_response(http::status::not_found, "Need to learn more", ContentType::TEXT_PLAIN);
                     }
@@ -62,18 +59,39 @@ namespace http_handler {
         }
     }
 
-std::string RequestHandler::URLDecode(const std::string& encoded) {
+    char RequestHandler::FromHexToChar(char a, char b){
+        a = std::tolower(a);
+        b = std::tolower(b);
+
+        if('a' <= a && a <= 'z'){
+            a = a - 'a' + 10;
+        }
+        else {
+            a -= '0';
+        }
+
+        if('a' <= b && b <= 'z'){
+            b = b - 'a' + 10;
+        }
+        else {
+            b -= '0';
+        }
+
+        return a * 16 + b;
+    }
+
+std::string RequestHandler::URLDecode(const std::string_view encoded) {
     std::string decoded;
-    for (size_t i = 0; i < encoded.length(); ++i) {
-        if (encoded[i] == '%') {
-            if (i + 2 < encoded.length()) {
-                std::string hex_value = encoded.substr(i + 1, 2);
-                int char_code = std::stoi(hex_value, nullptr, 16);
-                decoded += static_cast<char>(char_code);
-                i += 2;
+    for(size_t i = 0; i < encoded.size(); ++i){
+        if(encoded[i] == '%'){
+            if(i + 2 >= encoded.size()){
+                return "";
             }
-        } else {
-            decoded += encoded[i];
+            decoded.push_back(FromHexToChar(encoded[i + 1], encoded[i + 2]));
+            i += 2;
+        }
+        else {
+            decoded.push_back(encoded[i]);
         }
     }
     return decoded;
@@ -99,9 +117,19 @@ bool RequestHandler::IsSubPath(fs::path path, fs::path base) {
     return true;
 }
 
+
+std::string RequestHandler::ToLower(const std::string str){
+    std::string result;
+    for(char c : str){
+        result.push_back(std::tolower(c));
+    }
+
+    return result;
+}
+
 std::string_view RequestHandler::GetContentType(std::string req_target) {
         auto point = req_target.find_last_of('.');
-        std::string file_extension = std::string(req_target.substr(point + 1, req_target.npos));
+        std::string file_extension = ToLower(std::string(req_target.substr(point + 1, req_target.npos)));
 
         if (file_extension == "html" || file_extension == "htm") {
             return RequestHandler::ContentType::TEXT_HTML;
