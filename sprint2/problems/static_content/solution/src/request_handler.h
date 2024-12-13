@@ -73,7 +73,7 @@ public:
     VariantResponse MakeFileResponse(StringRequest& req) {
         FileResponse response;
 
-        std::string_view content_type = GetContentType(req.target());
+        std::string_view content_type = GetContentType(std::string(req.target()));
         std::string decoded = URLDecode(req.target().substr(1));
 
         http::file_body::value_type file;
