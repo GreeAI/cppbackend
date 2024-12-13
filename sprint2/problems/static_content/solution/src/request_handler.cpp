@@ -73,6 +73,9 @@ std::string RequestHandler::URLDecode(const std::string& encoded) {
         if (encoded[i] == '%' && i + 2 < encoded.length()) {
             std::string hex = encoded.substr(i + 1, 2);
             int value = std::stoi(hex, nullptr, 16);
+            if(vaule < 0 || value >255) {
+                return decoded;
+            }
             decoded += static_cast<char>(value);
             i += 2;
         } 
