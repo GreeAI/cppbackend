@@ -14,12 +14,8 @@ namespace http_handler {
         };
         try{
             if(req.method() == http::verb::get){
-                std::string decoded;
-                if(req.target() == "" || req.target() == "/") {
-                    decoded = "";
-                } else {
-                    decoded = URLDecode(req.target().data());
-                }
+                std::string decoded = URLDecode(req.target().data());
+                std::cout << "decoded: " << decoded << std::endl;
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
@@ -47,7 +43,6 @@ namespace http_handler {
                     } else {
                         decoded = decoded.substr(1);
                     }
-                    std::cout << "decoded: " << decoded << std::endl;
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
@@ -69,16 +64,16 @@ namespace http_handler {
 
 std::string RequestHandler::URLDecode(const std::string& encoded) {
     std::string decoded;
-    for (size_t i = 0; i < decoded.length(); ++i) {
-        if (decoded[i] == '%') {
-            if (i + 2 < decoded.length()) {
-                std::string hex_value = decoded.substr(i + 1, 2);
+    for (size_t i = 0; i < encoded.length(); ++i) {
+        if (encoded[i] == '%') {
+            if (i + 2 < encoded.length()) {
+                std::string hex_value = encoded.substr(i + 1, 2);
                 int char_code = std::stoi(hex_value, nullptr, 16);
                 decoded += static_cast<char>(char_code);
                 i += 2;
             }
         } else {
-            decoded += decoded[i];
+            decoded += encoded[i];
         }
     }
     return decoded;
