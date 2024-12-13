@@ -4,7 +4,7 @@
 #include <fstream>
 
 namespace http_handler {
-    //Разбить на отдельные методы, добавить валидацию путя. Мои глаза... Рефакторинг всего
+    //Разбить на отдельные методы, добавить валидацию путя. Мои глаза...
     RequestHandler::VariantResponse RequestHandler::HandleRequest(StringRequest&& req) {
         const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type) {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type);
@@ -42,10 +42,13 @@ namespace http_handler {
                     } else {
                         decoded = decoded.substr(1);
                     }
+                    std::cout << "decoded: " << decoded << std::endl;
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
+                    std::cout << "Static_path_root_: " << static_path_root_ << std::endl;
+                    std::cout << "summary_path: " << summary_path << std::endl;
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
                         return text_response(http::status::not_found, "Need to learn more", ContentType::TEXT_PLAIN);
                     }
@@ -107,19 +110,25 @@ std::string_view RequestHandler::GetContentType(std::string req_target) {
         }
         else if (file_extension == "js") {
             return RequestHandler::ContentType::TEXT_JS;
-        } 
+        }
         else if (file_extension == "txt") {
             return RequestHandler::ContentType::TEXT_PLAIN;
-        } 
+        }
         else if (file_extension == "json") {
             return RequestHandler::ContentType::JSON_HTML;
-        } 
-        else if (file_extension == "jpeg" || file_extension == "jpg") {
+        }
+        else if (file_extension == "jpeg" || file_extension == "jpg" || file_extension == "jpe") {
             return RequestHandler::ContentType::IMAGE_JPEG;
-        } 
+        }
         else if (file_extension == "svg" || file_extension == "svgz") {
             return RequestHandler::ContentType::IMAGE_SVG;
-        } 
+        }
+        else if (file_extension == "xml") {
+            return RequestHandler::ContentType::APP_XML;
+        }
+        else if (file_extension == "css") {
+            return RequestHandler::ContentType::TEXT_CSS;
+        }
         else {
             return RequestHandler::ContentType::EMPTY;
         }

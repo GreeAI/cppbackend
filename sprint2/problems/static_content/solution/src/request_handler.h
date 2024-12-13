@@ -49,7 +49,9 @@ public:
         constexpr static std::string_view TEXT_HTML = "text/html"sv;
         constexpr static std::string_view TEXT_JS = "text/javascript"sv;
         constexpr static std::string_view TEXT_PLAIN = "text/plain"sv;
+        constexpr static std::string_view TEXT_CSS = "text/css"sv;
         constexpr static std::string_view JSON_HTML = "application/json"sv;
+        constexpr static std::string_view APP_XML = "application/xml"sv;
         constexpr static std::string_view IMAGE_JPEG = "image/jpeg"sv;
         constexpr static std::string_view IMAGE_SVG = "image/svg+xml"sv;
         constexpr static std::string_view EMPTY = "application/octet-stream"sv;
@@ -68,7 +70,7 @@ public:
         return response;
     }
 
-    static FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
+    FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
                                     bool keep_alive,
                                     std::string_view content_type) {
         FileResponse response;
