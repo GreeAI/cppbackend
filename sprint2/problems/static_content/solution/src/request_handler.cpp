@@ -14,7 +14,13 @@ namespace http_handler {
         };
         try{
             if(req.method() == http::verb::get){
+
                 std::string decoded = URLDecode(req.target().data());
+
+                if(decoded.empty() || decoded == "/") {
+                    decoded = "index.html";
+                }
+
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
@@ -36,18 +42,20 @@ namespace http_handler {
                     std::string respons_body = json_loader::StatusCodeProcessing(status_code);
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
-                else if (StartWithStr(decoded, "/") || StartWithStr(decoded, "")) {
-                    if(decoded == "/" || decoded.empty()) {
-                        decoded = "index.html";
-                    } else {
+                else {
+                    if(decoded != "index.html") {
                         decoded = decoded.substr(1);
                     }
+                    
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
+                    if (!IsSubPath(summary_path, static_path_root_)) {
+                        return text_response(http::status::forbidden, "Access denied", ContentType::TEXT_PLAIN);
+                    }
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        return text_response(http::status::not_found, "Need to learn more", ContentType::TEXT_PLAIN);
+                        return text_response(http::status::not_found, decoded, ContentType::TEXT_PLAIN);
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
@@ -128,7 +136,7 @@ std::string RequestHandler::ToLower(const std::string str){
 }
 
 std::string_view RequestHandler::GetContentType(std::string req_target) {
-        auto point = req_target.find_last_of('.');
+        size_t point = req_target.find_last_of('.');
         std::string file_extension = ToLower(std::string(req_target.substr(point + 1, req_target.npos)));
 
         if (file_extension == "html" || file_extension == "htm") {
