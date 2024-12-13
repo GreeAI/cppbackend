@@ -9,8 +9,8 @@ namespace http_handler {
         const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type) {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type);
         };
-        const auto file_response = [this, &req](StringRequest& req) {
-            return MakeFileResponse(req);
+        const auto file_response = [this, &req](StringRequest& file_req) {
+            return MakeFileResponse(file_req);
         };
         try{
             if(req.method() == http::verb::get){
