@@ -70,14 +70,29 @@ public:
         return response;
     }
 
-    FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
-                                    bool keep_alive,
-                                    std::string_view content_type) {
+    VariantResponse MakeFileResponse(StringRequest& req) {
         FileResponse response;
-        response.version(http_version);
-        response.result(status);
+
+        std::string_view content_type = GetContentType(req.target());
+        std::string decoded = URLDecode(req.target().substr(1));
+
+        http::file_body::value_type file;
+        fs::path required_path(decoded);
+
+        fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
+
+        if (!IsSubPath(summary_path, static_path_root_)) {
+            return MakeStringResponse(http::status::forbidden, "Access denied", req.version(), req.keep_alive(), ContentType::TEXT_PLAIN);
+        }
+
+        if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
+            return MakeStringResponse(http::status::not_found, decoded, req.version(), req.keep_alive(), ContentType::TEXT_PLAIN);
+        }
+
+        response.version(req.version());
+        response.result(http::status::ok);
         response.insert(http::field::content_type, content_type);
-        response.body() = std::move(body);
+        response.body() = std::move(file);
         response.prepare_payload();
         return response;
     }

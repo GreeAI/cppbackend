@@ -9,8 +9,8 @@ namespace http_handler {
         const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type) {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type);
         };
-        const auto file_response = [this, &req](http::status status, http::file_body::value_type& body, std::string_view content_type) {
-            return MakeFileResponse(status, body, req.version(), req.keep_alive(), content_type);
+        const auto file_response = [this, &req](StringRequest& req) {
+            return MakeFileResponse(req);
         };
         try{
             if(req.method() == http::verb::get){
@@ -42,23 +42,7 @@ namespace http_handler {
                     std::string respons_body = json_loader::StatusCodeProcessing(status_code);
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
-                else {
-                    if(decoded != "index.html") {
-                        decoded = decoded.substr(1);
-                    }
-                    
-                    http::file_body::value_type file;
-                    std::string_view content_type = GetContentType(decoded);
-                    fs::path required_path(decoded);
-                    fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
-                    if (!IsSubPath(summary_path, static_path_root_)) {
-                        return text_response(http::status::forbidden, "Access denied", ContentType::TEXT_PLAIN);
-                    }
-                    if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        return text_response(http::status::not_found, decoded, ContentType::TEXT_PLAIN);
-                    }
-                    return file_response(http::status::ok, file, content_type);
-                }
+                return file_response(req);
             }
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML);
         }
