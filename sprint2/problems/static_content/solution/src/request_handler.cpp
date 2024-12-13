@@ -69,21 +69,16 @@ namespace http_handler {
 
 std::string RequestHandler::URLDecode(const std::string& encoded) {
     std::string decoded;
-    for (size_t i = 0; i < encoded.length(); ++i) {
-        if (encoded[i] == '%' && i + 2 < encoded.length()) {
-            std::string hex = encoded.substr(i + 1, 2);
-            int value = std::stoi(hex, nullptr, 16);
-            if(value < 0 || value > 255) {
-                return decoded;
+    for (size_t i = 0; i < decoded.length(); ++i) {
+        if (decoded[i] == '%') {
+            if (i + 2 < decoded.length()) {
+                std::string hex_value = decoded.substr(i + 1, 2);
+                int char_code = std::stoi(hex_value, nullptr, 16);
+                decoded += static_cast<char>(char_code);
+                i += 2;
             }
-            decoded += static_cast<char>(value);
-            i += 2;
-        } 
-        else if (encoded[i] == '+') {
-            decoded += ' ';
-        } 
-        else {
-            decoded += encoded[i];
+        } else {
+            decoded += decoded[i];
         }
     }
     return decoded;
