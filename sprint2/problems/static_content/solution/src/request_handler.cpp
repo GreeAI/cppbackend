@@ -14,7 +14,7 @@ namespace http_handler {
         };
         try{
             if(req.method() == http::verb::get){
-                if(req.target() == 0 || req.target() == "/") {
+                if(req.target() == "" || req.target() == "/") {
                     std::string decoded = "";
                 } else {
                     std::string decoded = URLDecode(req.target().data());
