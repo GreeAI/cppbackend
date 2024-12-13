@@ -14,7 +14,11 @@ namespace http_handler {
         };
         try{
             if(req.method() == http::verb::get){
-                std::string decoded = URLDecode(req.target().data());
+                if(req.target() == 0 || req.target() == "/") {
+                    std::string decoded = "";
+                } else {
+                    std::string decoded = URLDecode(req.target().data());
+                }
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
