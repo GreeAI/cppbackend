@@ -20,6 +20,7 @@ namespace http_handler {
                 if(decoded.empty() || decoded == "/") {
                     decoded = "index.html";
                 }
+                std::cout << "decoded: " << decoded << std::endl;
 
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
@@ -43,19 +44,21 @@ namespace http_handler {
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
                 else {
-                    if(req.target() != "index.html") {
-                        std::string docoded_file = URLDecode(std::string(req.target().substr(1)));
+                    std::string decoded_file = "index.html";
+                    if(decoded != "index.html") {
+                        decoded_file = URLDecode(std::string(req.target().substr(1)));
                     }
-                    
+                    std::cout << "req.target(): " << req.target() << std::endl;
+                    std::cout << "decoded_file: " << decoded_file << std::endl;
                     http::file_body::value_type file;
-                    std::string_view content_type = GetContentType(docoded_file);
-                    fs::path required_path(docoded_file);
+                    std::string_view content_type = GetContentType(decoded_file);
+                    fs::path required_path(decoded_file);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
                     if (!IsSubPath(summary_path, static_path_root_)) {
                         return text_response(http::status::forbidden, "Access denied", ContentType::TEXT_PLAIN);
                     }
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        return text_response(http::status::not_found, docoded_file, ContentType::TEXT_PLAIN);
+                        return text_response(http::status::not_found, decoded_file, ContentType::TEXT_PLAIN);
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
@@ -73,9 +76,6 @@ std::string RequestHandler::URLDecode(const std::string& encoded) {
         if (encoded[i] == '%' && i + 2 < encoded.length()) {
             std::string hex = encoded.substr(i + 1, 2);
             int value = std::stoi(hex, nullptr, 16);
-            if(value < 0 || value > 255) {
-                return decoded;
-            }
             decoded += static_cast<char>(value);
             i += 2;
         } 
