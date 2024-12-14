@@ -83,13 +83,12 @@ public:
     }
 
     VariantResponse HandleRequest(StringRequest&& req);
-    char FromHexToChar(char a, char b);
-    std::string URLDecode(const std::string_view encoded);
+    std::string URLDecode(const std::string& encoded);
     bool StartWithStr(const std::string& decoded, const std::string& target);
 
     bool IsSubPath(fs::path path, fs::path base);
     std::string ToLower(const std::string str);
-    std::string_view GetContentType(std::string req_target);
+    std::string_view GetContentType(const std::string& req_target);
 
 
 private:

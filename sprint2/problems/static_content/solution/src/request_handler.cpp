@@ -15,7 +15,7 @@ namespace http_handler {
         try{
             if(req.method() == http::verb::get){
 
-                std::string decoded = URLDecode(req.target().data());
+                std::string decoded = URLDecode(std::string(req.target()));
 
                 if(decoded.empty() || decoded == "/") {
                     decoded = "index.html";
@@ -43,19 +43,19 @@ namespace http_handler {
                     return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
                 }
                 else {
-                    if(decoded != "index.html") {
-                        decoded = decoded.substr(1);
+                    if(req.target() != "index.html") {
+                        std::string docoded_file = URLDecode(std::string(req.target().substr(1)));
                     }
                     
                     http::file_body::value_type file;
-                    std::string_view content_type = GetContentType(decoded);
-                    fs::path required_path(decoded);
+                    std::string_view content_type = GetContentType(docoded_file);
+                    fs::path required_path(docoded_file);
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
                     if (!IsSubPath(summary_path, static_path_root_)) {
                         return text_response(http::status::forbidden, "Access denied", ContentType::TEXT_PLAIN);
                     }
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        return text_response(http::status::not_found, decoded, ContentType::TEXT_PLAIN);
+                        return text_response(http::status::not_found, docoded_file, ContentType::TEXT_PLAIN);
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
@@ -67,39 +67,23 @@ namespace http_handler {
         }
     }
 
-    char RequestHandler::FromHexToChar(char a, char b){
-        a = std::tolower(a);
-        b = std::tolower(b);
-
-        if('a' <= a && a <= 'z'){
-            a = a - 'a' + 10;
-        }
-        else {
-            a -= '0';
-        }
-
-        if('a' <= b && b <= 'z'){
-            b = b - 'a' + 10;
-        }
-        else {
-            b -= '0';
-        }
-
-        return a * 16 + b;
-    }
-
-std::string RequestHandler::URLDecode(const std::string_view encoded) {
+std::string RequestHandler::URLDecode(const std::string& encoded) {
     std::string decoded;
-    for(size_t i = 0; i < encoded.size(); ++i){
-        if(encoded[i] == '%'){
-            if(i + 2 >= encoded.size()){
-                return "";
+    for (size_t i = 0; i < encoded.length(); ++i) {
+        if (encoded[i] == '%' && i + 2 < encoded.length()) {
+            std::string hex = encoded.substr(i + 1, 2);
+            int value = std::stoi(hex, nullptr, 16);
+            if(value < 0 || value > 255) {
+                return decoded;
             }
-            decoded.push_back(FromHexToChar(encoded[i + 1], encoded[i + 2]));
+            decoded += static_cast<char>(value);
             i += 2;
-        }
+        } 
+        else if (encoded[i] == '+') {
+            decoded += ' ';
+        } 
         else {
-            decoded.push_back(encoded[i]);
+            decoded += encoded[i];
         }
     }
     return decoded;
@@ -135,7 +119,7 @@ std::string RequestHandler::ToLower(const std::string str){
     return result;
 }
 
-std::string_view RequestHandler::GetContentType(std::string req_target) {
+std::string_view RequestHandler::GetContentType(const std::string& req_target) {
         size_t point = req_target.find_last_of('.');
         std::string file_extension = ToLower(std::string(req_target.substr(point + 1, req_target.npos)));
 
