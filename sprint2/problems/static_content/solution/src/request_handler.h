@@ -70,7 +70,7 @@ public:
         return response;
     }
 
-    FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
+    static FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
                                     bool keep_alive,
                                     std::string_view content_type) {
         FileResponse response;
