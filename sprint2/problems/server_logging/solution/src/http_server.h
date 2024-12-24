@@ -74,14 +74,14 @@ private:
             return Close();
         }
         if (ec) {
-            logger::LogError(ec.value(), ec.message(), "OnRead");
+            LOG_ERROR(ec.value(), ec.message(), "OnRead");
             return ReportError(ec, "read"sv);
         }
 
         std::string IP(stream_.socket().remote_endpoint().address().to_string());
         std::string URL(request_.target());
         std::string method(request_.method_string());
-        logger::LogRequestReceived(IP, URL, method);
+        LOG_REQUEST_RECEIVED(IP, URL, method);
 
         HandleRequest(std::move(request_));
     }
@@ -92,7 +92,7 @@ private:
         stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
 
         if (ec) {
-            logger::LogError(ec.value(), ec.message(), "Close");
+            LOG_ERROR(ec.value(), ec.message(), "Close");
             ReportError(ec, "close"sv); // Логирование при ошибки
         }
     }
@@ -101,7 +101,7 @@ private:
     void OnWrite(std::shared_ptr<http::response<Body, Fields>> safe_response, beast::error_code ec, [[maybe_unused]] std::size_t bytes_written) {
         using namespace std::literals;
         if (ec) {
-            logger::LogError(ec.value(), ec.message(), "OnWrite");
+            LOG_ERROR(ec.value(), ec.message(), "OnWrite");
             return ReportError(ec, "write"sv);
         }
 
@@ -110,7 +110,7 @@ private:
             return Close();
         }
         std::string content_type(safe_response->at(http::field::content_type));
-        logger::LogResponseSent(response_timer_.End(), static_cast<int>(safe_response->result()), content_type);
+        LOG_RESPONSE_SENT(response_timer_.End(), static_cast<int>(safe_response->result()), content_type);
 
         // Считываем следующий запрос
         Read();

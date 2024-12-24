@@ -7,7 +7,6 @@
 
 #include "json_loader.h"
 #include "request_handler.h"
-#include "boost_logger.h"
 
 using namespace std::literals;
 namespace net = boost::asio;
@@ -31,8 +30,10 @@ void RunWorkers(unsigned n, const Fn& fn) {
 }  // namespace
 
 int main(int argc, const char* argv[]) {
+    LOG_TO_CONSOLE();
+
     if (argc != 3) {
-        logger::LogServerExited(EXIT_FAILURE);
+        LOG_SERVER_EXIT(EXIT_FAILURE);
         return EXIT_FAILURE;
     }
     try {
@@ -63,7 +64,7 @@ int main(int argc, const char* argv[]) {
         });
 
         // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
-        logger::LogServerStarted(port, address.to_string());
+        LOG_SERVER_START(port, address.to_string());
         //std::cout << "Server has started..."sv << std::endl;
 
         // 6. Запускаем обработку асинхронных операций
@@ -71,7 +72,8 @@ int main(int argc, const char* argv[]) {
             ioc.run();
         });
     } catch (const std::exception& ex) {
-        logger::LogServerExited(EXIT_FAILURE, ex.what());
+        LOG_SERVER_EXIT(EXIT_FAILURE, ex.what());
         return EXIT_FAILURE;
     }
+    LOG_SERVER_EXIT(0);
 }
