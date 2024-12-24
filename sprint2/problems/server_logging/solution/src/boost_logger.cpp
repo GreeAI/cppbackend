@@ -13,8 +13,6 @@ std::ostream& operator<<(std::ostream& out, LogMessages msg){
 }
 
 void MyFormatter(logging::record_view const& rec, logging::formatting_ostream& strm) {
-    strm << rec[additional_data] << ": ";
-
     auto ts = *rec[timestamp];
     strm << json::serialize(json::object{
         {"timestamp", to_iso_extended_string(*rec[timestamp])},
