@@ -33,3 +33,4 @@ add_executable(game_server
 )
 
 target_link_libraries(game_server PRIVATE Threads::Threads)
+target_link_libraries(game_server PRIVATE CONAN_PKG::boost)
