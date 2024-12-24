@@ -21,7 +21,7 @@
 #define LOG_REQUEST_RECEIVED(ip, URI, method) \
     logger::Log({{"ip"s, ip}, {"URI"s, URI}, {"method", method}}, logger::LogMessages::REQUEST_RECEIVED);
 
-#define LOG_RESPONSE_SENT(esponse_time, code, content_type) \
+#define LOG_RESPONSE_SENT(response_time, code, content_type) \
     logger::Log({{"response_time"s, response_time}, {"code"s, code}, {"content_type", content_type}}, logger::LogMessages::RESPONSE_SENT);
 
 #define LOG_ERROR(code, text, where) \
