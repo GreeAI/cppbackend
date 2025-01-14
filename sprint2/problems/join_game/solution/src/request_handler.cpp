@@ -28,6 +28,7 @@ namespace http_handler {
         const auto file_response = [this, &req](http::status status, http::file_body::value_type& body, std::string_view content_type) {
             return MakeFileResponse(status, body, req.version(), req.keep_alive(), content_type);
         };
+        
         try{
             std::string decoded = URLDecode(std::string(req.target()));
             if(StartWithStr(decoded, "/api/v1/game/join") && req.method() != http::verb::post) {
