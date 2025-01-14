@@ -60,22 +60,29 @@ namespace http_handler {
                 else if(StartWithStr(decoded, "/api/v1/game/players")) {
                     auto it = req.find(http::field::authorization);
                     std::string_view req_token = it->value();
-                    players::Token token(std::string(req_token.substr(7, req_token.npos)));
+                    try{
+                        players::Token token(std::string(req_token.substr(7, req_token.npos)));
+                        if((*token).size() != 32) {
+                            json::object error_code;
+                            error_code["code"] = "invalidToken";
+                            error_code["message"] = "Authorization header is missing";
+                            return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        }
 
-                    if((*token).size() != 32) {
+                        if(players_.FindByToken(token)) {
+                            std::string respons_body = GetPlayersInfo(players_.GetPlayers());
+                            return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
+                        } else {
+                            json::object error_code;
+                            error_code["code"] = "unknownToken";
+                            error_code["message"] = "Player token has not been found";
+                            return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        }
+                    }
+                    catch (std::exception& e) {
                         json::object error_code;
                         error_code["code"] = "invalidToken";
                         error_code["message"] = "Authorization header is missing";
-                        return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
-                    }
-
-                    if(players_.FindByToken(token)) {
-                        std::string respons_body = GetPlayersInfo(players_.GetPlayers());
-                        return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
-                    } else {
-                        json::object error_code;
-                        error_code["code"] = "unknownToken";
-                        error_code["message"] = "Player token has not been found";
                         return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
                     return text_response(http::status::method_not_allowed, "Error in Players", ContentType::JSON_HTML, "no-cache");
