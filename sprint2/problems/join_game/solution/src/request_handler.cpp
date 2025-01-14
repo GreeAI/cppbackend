@@ -75,7 +75,7 @@ namespace http_handler {
                         json::object error_code;
                         error_code["code"] = "unknownToken";
                         error_code["message"] = "Player token has not been found";
-                        return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
                     return text_response(http::status::method_not_allowed, "Error in Players", ContentType::JSON_HTML, "no-cache");
                 }
