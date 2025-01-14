@@ -10,17 +10,6 @@ namespace http_handler {
             game_session = game.AddGameSession(model::Map::Id(map_id));
         }
 
-        if(name.empty()) {
-            json::object error_code;
-            error_code["code"] = "invalidArgument";
-            error_code["message"] = "Invalid name";
-            return json::serialize(error_code);
-        }
-
-        if(game_.FindMap(model::Map::Id(map_id)) == nullptr) {
-            return json_loader::StatusCodeProcessing(404);
-        }
-
         int id = random_id;
         const model::Dog* dog = game_session->AddDog(id, name);
         std::pair<players::Token, std::shared_ptr<players::Player>> player = players_.AddPlayer(id, name, dog, game_session);
@@ -33,14 +22,14 @@ namespace http_handler {
     }
 
     RequestHandler::VariantResponse RequestHandler::HandleRequest(StringRequest&& req) {
-        const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type, std::string_view cache = "") {
-            return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type, cache);
+        const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type, std::string_view cache = "", std::string allow = "") {
+            return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type, cache, allow);
         };
         const auto file_response = [this, &req](http::status status, http::file_body::value_type& body, std::string_view content_type) {
             return MakeFileResponse(status, body, req.version(), req.keep_alive(), content_type);
         };
         try{
-            if(req.method() == http::verb::get){
+            if(req.method() == http::verb::get || req.method() == http::verb::head){
                 std::string decoded = URLDecode(std::string(req.target()));
 
                 if(decoded.empty() || decoded == "/") {
@@ -104,7 +93,8 @@ namespace http_handler {
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
-            } else if(req.method() == http::verb::post or req.method() == http::verb::get) {
+            } 
+            if(req.method() == http::verb::post || req.method() == http::verb::get) {
                 std::string decoded = URLDecode(std::string(req.target()));
 
                 if(StartWithStr(decoded, "/api/v1/game/join")) {
@@ -113,14 +103,25 @@ namespace http_handler {
                         json::object error_code;
                         error_code["code"] = "invalidMethod";
                         error_code["message"] = "Only POST method is expected";
-                        return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
                     }
 
                     json::object player = json::parse(req.body()).as_object();
                     if(player.count("userName"s) && player.count("mapId")){
                         std::string name = std::string(player.at("userName").as_string());
-
                         std::string map_id = std::string(player.at("mapId").as_string());
+
+                        if(name.empty()) {
+                            json::object error_code;
+                            error_code["code"] = "invalidArgument";
+                            error_code["message"] = "Invalid name";
+                            return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        }
+
+                        if(game_.FindMap(model::Map::Id(map_id)) == nullptr) {
+                            std::string error_code = json_loader::StatusCodeProcessing(404);
+                            return text_response(http::status::not_found, error_code, ContentType::JSON_HTML, "no-cache");
+                        }
 
                         std::string respons_body = AuthorisationPlayer(name, map_id, game_);
 
@@ -128,10 +129,16 @@ namespace http_handler {
                     }
                     else {
                         json::object error_code;
-                        error_code["code"] = "invalidArgumen";
+                        error_code["code"] = "invalidArgument";
                         error_code["message"] = "Join game request parse error";
                         return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
+                }
+                else if (StartWithStr(decoded, "/api/v1/game/players")) {
+                    json::object error_code;
+                    error_code["code"] = "invalidMethod";
+                    error_code["message"] = "Invalid method";
+                    return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
                 }
             }
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML, "no-cache");

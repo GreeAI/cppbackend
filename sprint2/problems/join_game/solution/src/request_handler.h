@@ -63,13 +63,16 @@ public:
     // Создаёт StringResponse с заданными параметрами
     static StringResponse MakeStringResponse(http::status status, std::string_view body, unsigned http_version,
                                     bool keep_alive,
-                                    std::string_view content_type, std::string_view cache = "") {
+                                    std::string_view content_type, std::string_view cache , std::string_view allow_method) {
         StringResponse response(status, http_version);
         response.set(http::field::content_type, content_type);
         if(cache == "no-cache") response.set(http::field::cache_control, cache);
+        if(allow_method == "POST") response.set(http::field::allow, allow_method);
+        if(allow_method == "GET, HEAD") response.set(http::field::allow, allow_method);
         response.body() = body;
         response.content_length(body.size());
         response.keep_alive(keep_alive);
+        
         return response;
     }
 
