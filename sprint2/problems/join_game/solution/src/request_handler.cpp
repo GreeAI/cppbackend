@@ -29,8 +29,8 @@ namespace http_handler {
             return MakeFileResponse(status, body, req.version(), req.keep_alive(), content_type);
         };
         try{
+            std::string decoded = URLDecode(std::string(req.target()));
             if(req.method() == http::verb::get || req.method() == http::verb::head){
-                std::string decoded = URLDecode(std::string(req.target()));
 
                 if(decoded.empty() || decoded == "/") {
                     decoded = "index file";
@@ -94,17 +94,9 @@ namespace http_handler {
                     return file_response(http::status::ok, file, content_type);
                 }
             } 
-            if(req.method() == http::verb::post || req.method() == http::verb::get) {
-                std::string decoded = URLDecode(std::string(req.target()));
+            if(req.method() == http::verb::post) {
 
                 if(StartWithStr(decoded, "/api/v1/game/join")) {
-
-                    if(req.method() == http::verb::get) {
-                        json::object error_code;
-                        error_code["code"] = "invalidMethod";
-                        error_code["message"] = "Only POST method is expected";
-                        return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
-                    }
 
                     json::object player = json::parse(req.body()).as_object();
                     if(player.count("userName"s) && player.count("mapId")){
@@ -134,12 +126,17 @@ namespace http_handler {
                         return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
                 }
-                else if (StartWithStr(decoded, "/api/v1/game/players")) {
-                    json::object error_code;
-                    error_code["code"] = "invalidMethod";
-                    error_code["message"] = "Invalid method";
-                    return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
-                }
+            }
+            if(StartWithStr(decoded, "/api/v1/game/join") && req.method() != http::verb::post) {
+                json::object error_code;
+                error_code["code"] = "invalidMethod";
+                error_code["message"] = "Only POST method is expected";
+                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
+            } else if (StartWithStr(decoded, "/api/v1/game/players") && (req.method() != http::verb::get || req.method() != http::verb::head)) {
+                json::object error_code;
+                error_code["code"] = "invalidMethod";
+                error_code["message"] = "Invalid method";
+                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
             }
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML, "no-cache");
         }
