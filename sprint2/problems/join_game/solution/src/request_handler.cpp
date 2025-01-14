@@ -33,6 +33,13 @@ namespace http_handler {
             std::string decoded = URLDecode(std::string(req.target()));
             if(req.method() == http::verb::get){
 
+                if(StartWithStr(decoded, "/api/v1/game/join")) {
+                    json::object error_code;
+                    error_code["code"] = "invalidMethod";
+                    error_code["message"] = "Only POST method is expected";
+                    return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
+                }
+
                 if(decoded.empty() || decoded == "/") {
                     decoded = "index file";
                 }
@@ -123,14 +130,21 @@ namespace http_handler {
                         return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
                 }
+                else if (StartWithStr(decoded, "/api/v1/game/players")) {
+                    json::object error_code;
+                    error_code["code"] = "invalidMethod";
+                    error_code["message"] = "Invalid method";
+                    return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
+                }
             }
+// ----------------------------------------------------------------------------------
             if(StartWithStr(decoded, "/api/v1/game/join") && req.method() != http::verb::post) {
                 json::object error_code;
                 error_code["code"] = "invalidMethod";
                 error_code["message"] = "Only POST method is expected";
                 return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
             }
-             else if (StartWithStr(decoded, "/api/v1/game/players") && (req.method() != http::verb::get || req.method() != http::verb::head)) {
+            else if (StartWithStr(decoded, "/api/v1/game/players") && (req.method() != http::verb::get || req.method() != http::verb::head)) {
                 json::object error_code;
                 error_code["code"] = "invalidMethod";
                 error_code["message"] = "Invalid method";
@@ -140,6 +154,7 @@ namespace http_handler {
                 std::string respons_body = json_loader::StatusCodeProcessing(400);
                 return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML);
             }
+// -----------------------------------------------------------------------------
             if(req.method() == http::verb::head) {
                 if(StartWithStr(decoded, "/api/v1/game/players")) {
                     auto it = req.find(http::field::authorization);
