@@ -65,7 +65,7 @@ namespace http_handler {
                         json::object error_code;
                         error_code["code"] = "invalidToken";
                         error_code["message"] = "Authorization header is missing";
-                        return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                        return text_response(http::status::unauthorized, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
                     }
 
                     if(players_.FindByToken(token)) {
