@@ -104,7 +104,7 @@ namespace http_handler {
                     }
                     return file_response(http::status::ok, file, content_type);
                 }
-            } else if(req.method() == http::verb::post || req.method() == http::verb::get) {
+            } else if(req.method() == http::verb::post or req.method() == http::verb::get) {
                 std::string decoded = URLDecode(std::string(req.target()));
 
                 if(StartWithStr(decoded, "/api/v1/game/join")) {
@@ -137,7 +137,6 @@ namespace http_handler {
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML);
         }
         catch(const std::exception& e) {
-            std::cout << e.what() << std::endl;
             return text_response(http::status::internal_server_error, "internal_server_error", ContentType::JSON_HTML);
         }
     }
