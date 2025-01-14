@@ -134,7 +134,7 @@ namespace http_handler {
                     }
                 }
             }
-            return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML);
+            return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML, "no-cache");
         }
         catch(const std::exception& e) {
             return text_response(http::status::internal_server_error, "internal_server_error", ContentType::JSON_HTML);
