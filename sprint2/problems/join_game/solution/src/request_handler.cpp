@@ -30,14 +30,23 @@ namespace http_handler {
         };
         try{
             std::string decoded = URLDecode(std::string(req.target()));
+            if(StartWithStr(decoded, "/api/v1/game/join") && req.method() != http::verb::post) {
+                json::object error_code;
+                error_code["code"] = "invalidMethod";
+                error_code["message"] = "Only POST method is expected";
+                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
+            }
+             else if (StartWithStr(decoded, "/api/v1/game/players") && (req.method() != http::verb::get || req.method() != http::verb::head)) {
+                json::object error_code;
+                error_code["code"] = "invalidMethod";
+                error_code["message"] = "Invalid method";
+                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
+            }
+            else if (StartWithStr(decoded, "/api")) {
+                std::string respons_body = json_loader::StatusCodeProcessing(400);
+                return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML);
+            }
             if(req.method() == http::verb::get){
-
-                if(StartWithStr(decoded ,"/api/v1/game/join")) {
-                    json::object error_code;
-                    error_code["code"] = "invalidMethod";
-                    error_code["message"] = "Only POST method is expected";
-                    return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
-                }
 
                 if(decoded.empty() || decoded == "/") {
                     decoded = "index file";
@@ -131,43 +140,29 @@ namespace http_handler {
                 }
             }
             if(req.method() == http::verb::head) {
-                auto it = req.find(http::field::authorization);
-                std::string_view req_token = it->value();
-                players::Token token(std::string(req_token.substr(7, req_token.npos)));
+                if(StartWithStr(decoded, "/api/v1/game/players")) {
+                    auto it = req.find(http::field::authorization);
+                    std::string_view req_token = it->value();
+                    players::Token token(std::string(req_token.substr(7, req_token.npos)));
 
-                if((*token).size() != 32) {
-                    json::object error_code;
-                    error_code["code"] = "invalidToken";
-                    error_code["message"] = "Authorization header is missing";
-                    return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
-                }
+                    if((*token).size() != 32) {
+                        json::object error_code;
+                        error_code["code"] = "invalidToken";
+                        error_code["message"] = "Authorization header is missing";
+                        return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                    }
 
-                if(players_.FindByToken(token)) {
-                    std::string respons_body = GetPlayersInfo(players_.GetPlayers());
-                    return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
-                } else {
-                    json::object error_code;
-                    error_code["code"] = "unknownToken";
-                    error_code["message"] = "Player token has not been found";
-                    return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                    if(players_.FindByToken(token)) {
+                        std::string respons_body = GetPlayersInfo(players_.GetPlayers());
+                        return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
+                    } else {
+                        json::object error_code;
+                        error_code["code"] = "unknownToken";
+                        error_code["message"] = "Player token has not been found";
+                        return text_response(http::status::bad_request, json::serialize(error_code), ContentType::JSON_HTML, "no-cache");
+                    }
+                    return text_response(http::status::method_not_allowed, "Error in Players", ContentType::JSON_HTML, "no-cache");
                 }
-                return text_response(http::status::method_not_allowed, "Error in Players", ContentType::JSON_HTML, "no-cache");
-            }
-            if(StartWithStr(decoded, "/api/v1/game/join") && req.method() != http::verb::post) {
-                json::object error_code;
-                error_code["code"] = "invalidMethod";
-                error_code["message"] = "Only POST method is expected";
-                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "POST");
-            }
-             else if (StartWithStr(decoded, "/api/v1/game/players") && (req.method() != http::verb::get || req.method() != http::verb::head)) {
-                json::object error_code;
-                error_code["code"] = "invalidMethod";
-                error_code["message"] = "Invalid method";
-                return text_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
-            }
-            else if (StartWithStr(decoded, "/api") && req.method() == http::verb::get) {
-                std::string respons_body = json_loader::StatusCodeProcessing(400);
-                return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML);
             }
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML, "no-cache");
         }
