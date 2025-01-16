@@ -5,8 +5,6 @@
 #include "players.h"
 
 #include <boost/json.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/asio/execution/executor.hpp>
 #include <string_view>
 #include <map>
 #include <filesystem>
@@ -162,7 +160,7 @@ namespace http_handler
                             json::object error_code;
                             error_code["code"] = "invalidMethod";
                             error_code["message"] = "Invalid method";
-                            return error_response(http::status::not_found, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
+                            return error_response(http::status::method_not_allowed, json::serialize(error_code), ContentType::JSON_HTML, "no-cache", "GET, HEAD");
                         }
                         if ((*token).size() != 32)
                         {
