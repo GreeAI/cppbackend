@@ -298,7 +298,7 @@ namespace http_handler
     class RequestHandler : public std::enable_shared_from_this<RequestHandler>
     {
     public:
-        explicit RequestHandler(model::Game &game, fs::path static_root, Strand api_strand)
+        explicit RequestHandler(model::Game& game, fs::path static_root, Strand api_strand)
             : game_(game), file_handler(static_root), api_handler{api_strand}
         {
         }
@@ -339,8 +339,7 @@ namespace http_handler
         }
 
     private:
-    
-        model::Game &game_:
+        model::Game& game_;
         LogicHandler logic_handler;
         HandlerApiRequest api_handler;
         HandlerFIleRequest file_handler;
