@@ -20,7 +20,7 @@ void LoadingOfficesIntoMap(model::Map& map, const boost::json::array& offices_ar
 
 const std::string MapIdName(const model::Game::Maps& maps);
 const std::string MapFullInfo(const model::Game::Maps& maps);
-std::string StatusCodeProcessing(int code);
+//std::string StatusCodeProcessing(int code);
 //std::string GetPlayersInfo(const std::vector<players::Player>& players);
 
 }  // namespace json_loader
