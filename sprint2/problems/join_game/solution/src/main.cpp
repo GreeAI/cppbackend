@@ -14,7 +14,7 @@ namespace sys = boost::system;
 namespace http = boost::beast::http;
 namespace {
 
-// Запускает функцию fn на n потоках, включая текущий
+// Запускает функцию fn на n потоках, включая текущий 
 template <typename Fn>
 void RunWorkers(unsigned n, const Fn& fn) {
     n = std::max(1u, n);
