@@ -339,7 +339,8 @@ namespace http_handler
         }
 
     private:
-        model::Game &game_;
+    
+        model::Game &game_:
         LogicHandler logic_handler;
         HandlerApiRequest api_handler;
         HandlerFIleRequest file_handler;
