@@ -247,10 +247,10 @@ private:
 class Game {
 public:
     using Maps = std::vector<Map>;
-
+    
     void AddMap(Map map);
 
-    const Maps& GetMaps() const {
+    const std::vector<Map>& GetMaps() const {
         return maps_;
     }
 
@@ -264,6 +264,14 @@ public:
     GameSession* AddGameSession(const Map::Id& map);
     GameSession* ExitSession(const Map::Id& map);
 
+    double GetDefaultDogSpeed() const{
+        return default_dog_speed_;
+    }
+
+    void SetDefaultDogSpeed(double new_speed){
+        default_dog_speed_ = new_speed;
+    }
+
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
@@ -272,6 +280,7 @@ private:
     std::vector<Map> maps_;
     MapIdToIndex map_id_to_index_;
     Session game_session_;
+    double default_dog_speed_ = 1.0;
 };
 
 }  // namespace model

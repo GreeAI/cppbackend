@@ -21,6 +21,11 @@ struct JoinGameResult {
     std::string player_id;
 };
 
+class MapUseCase {
+public:
+    
+};
+
 class JoinGameError {
 public:
     JoinGameError(JoinGameErrorReason error): error_(error), error_value()

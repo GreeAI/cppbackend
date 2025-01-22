@@ -141,10 +141,10 @@ namespace http_handler
         }
         else if (StartWithStr(decoded, "/api/v1/maps/"))
         {
-            std::string map_id = decoded.substr(std::string_view("/api/v1/maps/").length());
-            std::string respons_body = json_loader::MapFullInfo(game.GetMaps());
-            if (respons_body.find(map_id) != std::string::npos)
-            {
+            model::Map::Id map_id(decoded.substr(std::string("/api/v1/maps/").length()));
+            const model::Map* map = game.FindMap(map_id);
+            if(map != nullptr) {
+                std::string respons_body = json_loader::MapFullInfo(*map);
                 return std::make_pair(respons_body, true);
             }
             std::string error_code = LogicHandler::StatusCodeProcessing(404);

@@ -19,7 +19,7 @@ void LoadingBuildingsIntoMap(model::Map& map, const boost::json::array& building
 void LoadingOfficesIntoMap(model::Map& map, const boost::json::array& offices_array);
 
 const std::string MapIdName(const model::Game::Maps& maps);
-const std::string MapFullInfo(const model::Game::Maps& maps);
+const std::string MapFullInfo(const model::Map &map);
 //std::string StatusCodeProcessing(int code);
 //std::string GetPlayersInfo(const std::vector<players::Player>& players);
 

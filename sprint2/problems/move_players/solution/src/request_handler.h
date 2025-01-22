@@ -394,12 +394,16 @@ class HandlerFIleRequest : public LogicHandler
         }
 
         std::string decoded = LogicHandler::URLDecode(std::string(req.target()));
-        if (req.target().empty() || req.target() == "/")
+        if(decoded.empty() || decoded == "/") {
+            decoded = "empty";
+        }
+        if (!decoded.empty())
         {
             std::string start_file = "index.html";
-            if (decoded != "index file")
+            if (decoded != "empty")
             {
-                start_file = URLDecode(std::string(req.target().substr(1)));
+                start_file = LogicHandler::URLDecode(std::string(req.target().substr(1)));
+                std::cout << start_file << " :Start file" <<  std::endl;
             }
             http::file_body::value_type file;
             std::string_view content_type = GetContentType(start_file);
@@ -412,12 +416,13 @@ class HandlerFIleRequest : public LogicHandler
             }
             if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec)
             {
+                std::cout << summary_path.string() << " :Summary path" <<  std::endl;
                 return ReportServerError(http::status::not_found, "Need more learning", req.version(), req.keep_alive(),
                                          ContentType::TEXT_PLAIN);
             }
             return MakeFileResponse(http::status::ok, file, req.version(), req.keep_alive(), content_type);
         }
-        return ReportServerError(http::status::not_found, "Need more learning", req.version(), req.keep_alive(),
+        return ReportServerError(http::status::not_found, "After if block", req.version(), req.keep_alive(),
                                  ContentType::TEXT_PLAIN);
     }
 
