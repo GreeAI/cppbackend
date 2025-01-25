@@ -340,12 +340,12 @@ class HandlerApiRequest : public LogicHandler
                     return error_response(http::status::method_not_allowed, json::serialize(error_code),
                                           ContentType::JSON_HTML, "no-cache", "POST");
                 }
-                json::object tick_time = json::parse(req.body()).as_object();
                 try
                 {
+                    json::object tick_time = json::parse(req.body()).as_object();
                     if (tick_time.count("timeDelta"))
                     {
-                        std::string respons_body = app_.TickTime(tick_time.at("timeDelta").as_int64() / 1000);
+                        std::string respons_body = app_.TickTime(tick_time.at("timeDelta").as_int64());
                         return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
                     }
                     json::object error_code;
@@ -355,8 +355,10 @@ class HandlerApiRequest : public LogicHandler
                                           ContentType::JSON_HTML, "no-cache");
                 }
                 catch(std::exception &e) {
-                    std::cout << e.what() << std::endl;
-                    return error_response(http::status::conflict, std::string(e.what()),
+                    json::object error_code;
+                    error_code["code"] = "invalidArgument";
+                    error_code["message"] = "Failed to parse tick request JSON";
+                    return error_response(http::status::bad_request, json::serialize(error_code),
                                           ContentType::JSON_HTML, "no-cache");
                 }
             }
