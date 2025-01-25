@@ -1,5 +1,6 @@
 #include "model.h"
 
+#include <set>
 #include <stdexcept>
 
 namespace model
@@ -27,58 +28,69 @@ void Map::AddOffice(Office office)
     }
 }
 
-std::vector<const Road*> Map::FindRoadsByCoords(const Dog::Position& pos) const{
-    std::vector<const Road*> result;
+std::vector<const Road *> Map::FindRoadsByCoords(const Dog::Position &pos) const
+{
+    std::vector<const Road *> result;
     FindInVerticals(pos, result);
     FindInHorizontals(pos, result);
 
     return result;
 }
 
-void Map::FindInVerticals(const Dog::Position &pos, std::vector<const Road *> &roads) const
-{
-    double dog_x = pos.operator*().x;
+void Map::FindInVerticals(const Dog::Position& pos, std::vector<const Road*>& roads) const{
+    const auto& v_roads = road_map_.at(Map::RoadTag::VERTICAL);
+    ConstRoadIt it_x = v_roads.lower_bound((*pos).x);
 
-    for (const auto &road : roads_) {
-        if (road.IsHorizontal()) {
-            double road_x = road.GetStart().x;
-            
-            if (dog_x >= (road_x - ROAD_HALF_WIDTH) && dog_x <= (road_x + ROAD_HALF_WIDTH)) {
-                roads.push_back(&road);
+    if(it_x != v_roads.end()){                 
+        if(it_x != v_roads.begin()){
+            ConstRoadIt prev_it_x = std::prev(it_x, 1);
+            if(CheckBounds(prev_it_x, pos)){
+                roads.push_back(&prev_it_x->second);
             }
+        }
+
+        if(CheckBounds(it_x, pos)){
+            roads.push_back(&it_x->second);
+        }
+    } else {
+        it_x = std::prev(v_roads.end(), 1);
+        if(CheckBounds(it_x, pos)){
+            roads.push_back(&it_x->second);
         }
     }
 }
 
-void Map::FindInHorizontals(const Dog::Position &pos, std::vector<const Road *> &roads) const
-{
-    double dog_y = pos.operator*().y;
+void Map::FindInHorizontals(const Dog::Position& pos, std::vector<const Road*>& roads) const{
+    const auto& h_roads = road_map_.at(Map::RoadTag::HORIZONTAl);
+    ConstRoadIt it_y = h_roads.lower_bound((*pos).y);
 
-    for (const auto &road : roads_) {
-        if (road.IsHorizontal()) {
-            double road_y = road.GetStart().y;
-
-            if (dog_y >= (road_y - ROAD_HALF_WIDTH) && dog_y <= (road_y + ROAD_HALF_WIDTH)) {
-                roads.push_back(&road);
+    if(it_y != h_roads.end()){                 
+        if(it_y != h_roads.begin()){
+            ConstRoadIt prev_it_y = std::prev(it_y, 1);
+            if(CheckBounds(prev_it_y, pos)){
+                roads.push_back(&prev_it_y->second);
             }
+        }
+
+        if(CheckBounds(it_y, pos)){
+            roads.push_back(&it_y->second);
+        }
+    } else {
+        it_y = std::prev(h_roads.end(), 1);
+        if(CheckBounds(it_y, pos)){
+            roads.push_back(&it_y->second);
         }
     }
 }
 
-bool Map::CheckBounds(const Road &road, const Dog::Position &pos) const
-{
-    Point start = road.GetStart();
-    Point end = road.GetEnd();
-
-    if (start.x - ROAD_HALF_WIDTH <= (*pos).x && (*pos).x <= end.x + ROAD_HALF_WIDTH)
-    {
-        return true;
+bool Map::CheckBounds(ConstRoadIt it, const Dog::Position& pos) const{
+    Point start = it->second.GetStart();
+    Point end = it->second.GetEnd();
+    if(it->second.IsInvert()){
+        std::swap(start, end);
     }
-    else if (start.y - ROAD_HALF_WIDTH <= (*pos).y && (*pos).x <= end.y + ROAD_HALF_WIDTH)
-    {
-        return true;
-    }
-    return false;
+    return ((start.x - 0.4 <= (*pos).x && (*pos).x <= end.x + 0.4) && 
+                (start.y - 0.4 <= (*pos).y && (*pos).y <= end.y + 0.4));
 }
 
 void Game::AddMap(Map map)
@@ -144,9 +156,18 @@ void Game::UpdateDogsPos(GameSession::Dogs &dogs, const Map *map, double tick)
 
         double new_x = position.operator*().x + speed.first * tick;
         double new_y = position.operator*().y + speed.second * tick;
+
+        Dog::DogPosition pos_stop({new_x, new_y});
+        Dog::Speed result_speed(speed);
+
+        std::set<Dog::DogPosition> collisions;
+
         for (auto &road : map->FindRoadsByCoords(dog.GetPosition()))
         {
             Dog::DogPosition new_pos = {new_x, new_y};
+
+            const auto start = road->GetStart();
+            const auto end = road->GetEnd();
 
             if (CheckDogOnRoad(new_pos, *road))
             {
@@ -154,58 +175,54 @@ void Game::UpdateDogsPos(GameSession::Dogs &dogs, const Map *map, double tick)
                 return;
             }
             // Check where dog staying
-            if (road->IsHorizontal())
+            if (start.x - 0.4 >= new_x)
             {
-                double upper_bound = road->GetStart().y + ROAD_HALF_WIDTH;
-                double lower_bound = road->GetStart().y - ROAD_HALF_WIDTH;
-                if (new_y > upper_bound)
-                {
-                    new_y = upper_bound;
-                }
-                else if (new_y < lower_bound)
-                {
-                    new_y = lower_bound;
-                }
+                pos_stop.x = start.x - 0.4;
             }
-            else if (road->IsVertical())
+            else if (new_x >= end.x + 0.4)
             {
-                // Находим границу по x
-                double right_bound = road->GetStart().x + ROAD_HALF_WIDTH;
-                double left_bound = road->GetStart().x - ROAD_HALF_WIDTH;
-                if (new_x > right_bound)
-                {
-                    new_x = right_bound;
-                }
-                else if (new_x < left_bound)
-                {
-                    new_x = left_bound;
-                }
+                pos_stop.x = end.x + 0.4;
             }
+
+            if (start.y - 0.4 >= new_y)
+            {
+                pos_stop.y = start.y - 0.4;
+            }
+            else if (new_y >= end.y + 0.4)
+            {
+                pos_stop.y = end.y + 0.4;
+            }
+
+            collisions.insert(pos_stop);
         }
-        Dog::DogPosition pos_stop = {new_x, new_y};
+
+        if (collisions.size() != 0)
+        {
+            pos_stop = *(std::prev(collisions.end(), 1));
+            result_speed = {0, 0};
+        }
         dog.SetPosition(pos_stop);
-        dog.SetSpeed({0, 0});
+        dog.SetSpeed(result_speed);
     }
 }
 
-bool Game::CheckDogOnRoad(const Dog::DogPosition pos, const Road &road) const
+bool Game::CheckDogOnRoad(const Dog::DogPosition& pos, const Road &road) const
 {
     const auto start = road.GetStart();
     const auto end = road.GetEnd();
 
-    if (road.IsHorizontal())
+    if (start.x - 0.4 <= pos.x)
     {
-        // Проверяем верхнюю и нижнюю границы дороги
-        double upper_bound = start.y + ROAD_HALF_WIDTH;
-        double lower_bound = start.y - ROAD_HALF_WIDTH;
-        return (pos.y >= lower_bound && pos.y <= upper_bound) && (pos.x >= start.x && pos.x <= end.x);
-    }
-    else if (road.IsVertical())
-    {
-        // Проверяем левую и правую границы дороги
-        double right_bound = start.x + ROAD_HALF_WIDTH;
-        double left_bound = start.x - ROAD_HALF_WIDTH;
-        return (pos.x >= left_bound && pos.x <= right_bound) && (pos.y >= start.y && pos.y <= end.y);
+        if (pos.x <= end.x + 0.4)
+        {
+            if (start.y - 0.4 <= pos.y)
+            {
+                if (pos.y <= end.y + 0.4)
+                {
+                    return true;
+                }
+            }
+        }
     }
 
     return false;

@@ -159,13 +159,7 @@ class GameStateUseCase
         {
             player->GetDog()->SetSpeed({dog_speed, 0});
         }
-        else
-        {
-            json::object error_code;
-            error_code["code"] = "invalidArgument";
-            error_code["message"] = "Failed to parse action";
-            return json::serialize(error_code);
-        }
+        
         return "{}";
     }
 

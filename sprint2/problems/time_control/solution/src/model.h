@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -86,6 +87,15 @@ class Road
         return end_;
     }
 
+    bool IsInvert() const noexcept
+    {
+        if (start_.x > end_.x || start_.y > end_.y)
+        {
+            return true;
+        }
+        return false;
+    }
+
   private:
     Point start_;
     Point end_;
@@ -144,6 +154,11 @@ class Dog
     {
         double x = 0;
         double y = 0;
+
+        bool operator<(const DogPosition &other) const
+        {
+            return std::tie(x, y) < std::tie(other.x, other.y);
+        }
     };
 
     using Position = util::Tagged<DogPosition, Dog>;
@@ -184,7 +199,7 @@ class Dog
         return directions_;
     }
 
-    void SetPosition(const DogPosition &new_pos) 
+    void SetPosition(const DogPosition &new_pos)
     {
         Dog::Position new_dog_pos{new_pos};
         pos_ = new_dog_pos;
@@ -201,10 +216,18 @@ class Dog
 class Map
 {
   public:
+    enum class RoadTag
+    {
+        VERTICAL,
+        HORIZONTAl
+    };
+
     using Id = util::Tagged<std::string, Map>;
     using Roads = std::vector<Road>;
     using Buildings = std::vector<Building>;
     using Offices = std::vector<Office>;
+    using ConstRoadIt = std::map<double, const Road &>::const_iterator;
+    using RoadMap = std::map<RoadTag, std::map<double, const Road &>>;
 
     Map(Id id, std::string name) noexcept : id_(std::move(id)), name_(std::move(name))
     {
@@ -237,7 +260,16 @@ class Map
 
     void AddRoad(const Road &road)
     {
-        roads_.emplace_back(road);
+        const Road &added_road = roads_.emplace_back(road);
+
+        if (added_road.IsVertical())
+        {
+            road_map_[Map::RoadTag::VERTICAL].insert({road.GetStart().x, added_road});
+        }
+        else
+        {
+            road_map_[Map::RoadTag::HORIZONTAl].insert({road.GetStart().y, added_road});
+        }
     }
 
     void AddBuilding(const Building &building)
@@ -257,15 +289,13 @@ class Map
         return dog_speed_;
     }
 
-    std::vector<const Road*> FindRoadsByCoords(const Dog::Position& pos) const;
+    std::vector<const Road *> FindRoadsByCoords(const Dog::Position &pos) const;
 
-    /* Обработка вертикальных дорог по x координате*/
     void FindInVerticals(const Dog::Position &pos, std::vector<const Road *> &roads) const;
 
-    /* Обработка горизонтальных дорог по y координате*/
     void FindInHorizontals(const Dog::Position &pos, std::vector<const Road *> &roads) const;
 
-    bool CheckBounds(const Road &road, const Dog::Position &pos) const;
+    bool CheckBounds(ConstRoadIt it, const Dog::Position &pos) const;
 
   private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
@@ -273,12 +303,13 @@ class Map
     Id id_;
     std::string name_;
     Roads roads_;
+    RoadMap road_map_;
     Buildings buildings_;
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
 
-    double dog_speed_ = 1;
+    double dog_speed_ = 0;
 };
 
 class GameSession
@@ -298,7 +329,7 @@ class GameSession
         return map_;
     }
 
-    Dogs& GetDogs()
+    Dogs &GetDogs()
     {
         return dogs_;
     }
@@ -342,21 +373,11 @@ class Game
         default_dog_speed_ = new_speed;
     }
 
-    void SetTick(double tick)
-    {
-        tick_time_ = tick;
-    }
-
-    double GetTick()
-    {
-        return tick_time_;
-    }
-
     void GameState(double tick);
 
     void UpdateDogsPos(GameSession::Dogs &dogs, const Map *map, double tick);
 
-    bool CheckDogOnRoad(const Dog::DogPosition pos, const Road &road) const;
+    bool CheckDogOnRoad(const Dog::DogPosition &pos, const Road &road) const;
 
   private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
@@ -367,7 +388,6 @@ class Game
     MapIdToIndex map_id_to_index_;
     Session game_session_;
     double default_dog_speed_ = 1.0;
-    double tick_time_ = 0.;
 };
 
 } // namespace model
