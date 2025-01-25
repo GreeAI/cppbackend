@@ -112,7 +112,7 @@ class HandlerApiRequest : public LogicHandler
     template <typename Request> StringResponse ApiHandleRequest(Request &&req, model::Game &game)
     {
         const auto text_response = [this, &req](http::status status, std::string_view text,
-                                                std::string_view content_type, std::string cache = "") {
+                                                std::string_view content_type, std::string cache = "no-cache") {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type, cache);
         };
         const auto file_response = [this, &req](http::status status, http::file_body::value_type &body,
@@ -120,7 +120,7 @@ class HandlerApiRequest : public LogicHandler
             return MakeFileResponse(status, body, req.version(), req.keep_alive(), content_type);
         };
         const auto error_response = [this, &req](http::status status, std::string_view body,
-                                                 std::string_view content_type, std::string_view cache = "",
+                                                 std::string_view content_type, std::string_view cache = "no-cache",
                                                  std::string allow = "") {
             return ReportServerError(status, body, req.version(), req.keep_alive(), content_type, cache, allow);
         };
