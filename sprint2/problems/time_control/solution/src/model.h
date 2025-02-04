@@ -1,304 +1,251 @@
 #pragma once
-#include <map>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <vector>
+#include <deque>
+#include <iostream>
 
 #include "tagged.h"
 
-namespace model
-{
-
-const double ROAD_HALF_WIDTH = 0.4; // Half the width of road
+namespace model {
 
 using Dimension = int;
 using Coord = Dimension;
 
-struct Point
-{
+struct Point {
     Coord x, y;
 };
 
-struct Size
-{
+struct Size {
     Dimension width, height;
 };
 
-struct Rectangle
-{
-    Point position;
-    Size size;
-};
-
-struct Offset
-{
-    Dimension dx, dy;
-};
-
-enum class Directions
-{
+enum class Direction{
     NORTH,
     SOUTH,
     WEST,
     EAST
 };
 
-class Road
-{
-    struct HorizontalTag
-    {
-        HorizontalTag() = default;
+struct Rectangle {
+    Point position;
+    Size size;
+};
+
+struct Offset {
+    Dimension dx, dy;
+};
+
+class Road {
+    struct HorizontalTag {
+        explicit HorizontalTag() = default;
     };
 
-    struct VerticalTag
-    {
-        VerticalTag() = default;
+    struct VerticalTag {
+        explicit VerticalTag() = default;
     };
 
-  public:
+public:
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
 
-    Road(HorizontalTag, Point start, Coord end_x) noexcept : start_{start}, end_{end_x, start.y}
-    {
+    Road(HorizontalTag, Point start, Coord end_x) noexcept
+        : start_{start}
+        , end_{end_x, start.y} {
     }
 
-    Road(VerticalTag, Point start, Coord end_y) noexcept : start_{start}, end_{start.x, end_y}
-    {
+    Road(VerticalTag, Point start, Coord end_y) noexcept
+        : start_{start}
+        , end_{start.x, end_y} {
     }
 
-    bool IsHorizontal() const noexcept
-    {
+    bool IsHorizontal() const noexcept {
         return start_.y == end_.y;
     }
 
-    bool IsVertical() const noexcept
-    {
+    bool IsVertical() const noexcept {
         return start_.x == end_.x;
     }
 
-    Point GetStart() const noexcept
-    {
+    Point GetStart() const noexcept {
         return start_;
     }
 
-    Point GetEnd() const noexcept
-    {
+    Point GetEnd() const noexcept {
         return end_;
     }
 
-    bool IsInvert() const noexcept
-    {
-        if (start_.x > end_.x || start_.y > end_.y)
-        {
+    bool IsInvert() const noexcept{
+        if(start_.x > end_.x || start_.y > end_.y){
             return true;
         }
         return false;
     }
 
-  private:
+private:
     Point start_;
     Point end_;
 };
 
-class Building
-{
-  public:
-    explicit Building(Rectangle bounds) noexcept : bounds_{bounds}
-    {
+inline std::ostream& operator<<(std::ostream& out, const Road& road){
+    out << road.GetStart().x << ", " << road.GetStart().y
+    << " -- " << road.GetEnd().x << ", " << road.GetEnd().y;
+    return out;
+}
+
+class Building {
+public:
+    explicit Building(Rectangle bounds) noexcept
+        : bounds_{bounds} {
     }
 
-    const Rectangle &GetBounds() const noexcept
-    {
+    const Rectangle& GetBounds() const noexcept {
         return bounds_;
     }
 
-  private:
+private:
     Rectangle bounds_;
 };
 
-class Office
-{
-  public:
+class Office {
+public:
     using Id = util::Tagged<std::string, Office>;
 
-    Office(Id id, Point position, Offset offset) noexcept : id_{std::move(id)}, position_{position}, offset_{offset}
-    {
+    Office(Id id, Point position, Offset offset) noexcept
+        : id_{std::move(id)}
+        , position_{position}
+        , offset_{offset} {
     }
 
-    const Id &GetId() const noexcept
-    {
+    const Id& GetId() const noexcept {
         return id_;
     }
 
-    Point GetPosition() const noexcept
-    {
+    Point GetPosition() const noexcept {
         return position_;
     }
 
-    Offset GetOffset() const noexcept
-    {
+    Offset GetOffset() const noexcept {
         return offset_;
     }
 
-  private:
+private:
     Id id_;
     Point position_;
     Offset offset_;
 };
 
-class Dog
-{
-  public:
-    struct DogPosition
-    {
+class Dog{
+public:
+    using Name = util::Tagged<std::string, Dog>;
+    struct PairDouble{
         double x = 0;
         double y = 0;
-
-        bool operator<(const DogPosition &other) const
-        {
-            return std::tie(x, y) < std::tie(other.x, other.y);
-        }
     };
+    using Position = util::Tagged<PairDouble, Dog>;
+    using Speed = util::Tagged<PairDouble, Dog>;
 
-    using Position = util::Tagged<DogPosition, Dog>;
-    using Speed = std::pair<double, double>;
-
-    Dog(int id, std::string name, Position pos, Speed speed, Directions dir) noexcept
-        : id_(id), name_(std::move(name)), pos_(pos), speed_(speed), directions_(dir)
-    {
+    Dog(int id, Name name, Position pos, Speed speed, Direction dir) noexcept
+        : id_(id), name_(name)
+        , pos_(pos), speed_(speed), dir_(dir){
     }
 
-    const int GetId() const noexcept
-    {
+    int GetId() const{
         return id_;
     }
 
-    const std::string GetName() const noexcept
-    {
+    const Name& GetName() const{
         return name_;
     }
 
-    const Position &GetPosition() const
-    {
+    void SetPosition(const Position& new_pos){
+        pos_ = new_pos;
+    }
+
+    const Position& GetPosition() const{
         return pos_;
     }
 
-    const Speed &GetSpeed() const
-    {
+    void SetSpeed(const Speed& new_speed){
+        speed_ = new_speed;
+    }
+
+    const Speed& GetSpeed() const{
         return speed_;
     }
 
-    void SetSpeed(const Speed &speed)
-    {
-        speed_ = speed;
+    void SetDirection(model::Direction dir){
+        dir_ = dir;
     }
 
-    const Directions GetDirection() const
-    {
-        return directions_;
+    Direction GetDirection() const{
+        return dir_;
     }
-
-    void SetPosition(const DogPosition &new_pos)
-    {
-        Dog::Position new_dog_pos{new_pos};
-        pos_ = new_dog_pos;
-    }
-
-  private:
+private:
     int id_;
-    std::string name_;
+    Name name_;
     Position pos_;
     Speed speed_;
-    Directions directions_;
+    Direction dir_;
 };
 
-class Map
-{
-  public:
-    enum class RoadTag
-    {
+inline bool operator<(const Dog::PairDouble& lhs, const Dog::PairDouble& rhs){
+    return std::tuple(lhs.x, lhs.y) < std::tuple(rhs.x, rhs.x);
+}
+
+class Map {
+public:
+    using Id = util::Tagged<std::string, Map>;
+    enum class RoadTag{
         VERTICAL,
         HORIZONTAl
     };
+    using Roads = std::deque<Road>;
+    using RoadMap = std::map<RoadTag, std::map<double, const Road&>>;
+    using RoadIt = std::map<double, const Road&>::iterator;
+    using ConstRoadIt = std::map<double, const Road&>::const_iterator;
+    using Buildings = std::deque<Building>;
+    using Offices = std::deque<Office>;
 
-    using Id = util::Tagged<std::string, Map>;
-    using Roads = std::vector<Road>;
-    using Buildings = std::vector<Building>;
-    using Offices = std::vector<Office>;
-    using ConstRoadIt = std::map<double, const Road &>::const_iterator;
-    using RoadMap = std::map<RoadTag, std::map<double, const Road &>>;
-
-    Map(Id id, std::string name) noexcept : id_(std::move(id)), name_(std::move(name))
-    {
+    Map(Id id, std::string name) noexcept
+        : id_(std::move(id))
+        , name_(std::move(name)) {
     }
 
-    const Id &GetId() const noexcept
-    {
-        return id_;
-    }
+    const Id& GetId() const noexcept;
 
-    const std::string &GetName() const noexcept
-    {
-        return name_;
-    }
+    const std::string& GetName() const noexcept;
 
-    const Buildings &GetBuildings() const noexcept
-    {
-        return buildings_;
-    }
+    const Buildings& GetBuildings() const noexcept;
 
-    const Roads &GetRoads() const noexcept
-    {
-        return roads_;
-    }
+    const Roads& GetRoads() const noexcept;
 
-    const Offices &GetOffices() const noexcept
-    {
-        return offices_;
-    }
+    const Offices& GetOffices() const noexcept;
 
-    void AddRoad(const Road &road)
-    {
-        const Road &added_road = roads_.emplace_back(road);
+    void AddRoad(const Road& road);
 
-        if (added_road.IsVertical())
-        {
-            road_map_[Map::RoadTag::VERTICAL].insert({road.GetStart().x, added_road});
-        }
-        else
-        {
-            road_map_[Map::RoadTag::HORIZONTAl].insert({road.GetStart().y, added_road});
-        }
-    }
+    std::vector<const Road*> FindRoadsByCoords(const Dog::Position& pos) const;
 
-    void AddBuilding(const Building &building)
-    {
-        buildings_.emplace_back(building);
-    }
+    void AddBuilding(const Building& building);
 
     void AddOffice(Office office);
 
-    void SetDogSpeed(double speed)
-    {
-        dog_speed_ = speed;
-    }
+    void AddDogSpeed(double new_speed);
 
-    double GetDogSpeed() const
-    {
-        return dog_speed_;
-    }
+    double GetDogSpeed() const;
 
-    std::vector<const Road *> FindRoadsByCoords(const Dog::Position &pos) const;
-
-    void FindInVerticals(const Dog::Position &pos, std::vector<const Road *> &roads) const;
-
-    void FindInHorizontals(const Dog::Position &pos, std::vector<const Road *> &roads) const;
-
-    bool CheckBounds(ConstRoadIt it, const Dog::Position &pos) const;
-
-  private:
+private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
+
+
+    /* Обработка вертикальных дорог по x координате*/
+    void FindInVerticals(const Dog::Position& pos, std::vector<const Road*>& roads) const;
+
+    /* Обработка горизонтальных дорог по y координате*/
+    void FindInHorizontals(const Dog::Position& pos, std::vector<const Road*>& roads) const;
+
+    bool CheckBounds(ConstRoadIt it, const Dog::Position& pos) const;
 
     Id id_;
     std::string name_;
@@ -308,86 +255,72 @@ class Map
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
-
     double dog_speed_ = 0;
 };
 
-class GameSession
-{
-  public:
-    using Dogs = std::vector<Dog>;
-
-    GameSession(const Map *map) : map_(map)
-    {
+class GameSession{
+public:
+    GameSession(const Map* map)
+        : map_(map){
     }
 
-    Dog *AddDog(const int id, const std::string &name, const Dog::Position &pos, const Dog::Speed &speed,
-                const Directions dir);
+    Dog* AddDog(int id, const Dog::Name& name, 
+                        const Dog::Position& pos, const Dog::Speed& vel, 
+                        Direction dir){
+        dogs_.emplace_back(id, name, pos, vel, dir);
+        return &dogs_.back();
+    }
 
-    const Map *GetMap() const
-    {
+    const Map* GetMap() const {
         return map_;
     }
 
-    Dogs &GetDogs()
-    {
+    std::deque<Dog>& GetDogs(){
         return dogs_;
     }
 
-  private:
-    Dogs dogs_;
-    const Map *map_;
+    const std::deque<Dog>& GetDogs() const{
+        return static_cast<const std::deque<Dog>&>(dogs_);
+    }
+private:
+    std::deque<Dog> dogs_;
+    const Map* map_;
 };
 
-class Game
-{
-  public:
-    using Maps = std::vector<Map>;
+class Game {
+public:
+    using Maps = std::deque<Map>;
 
-    void AddMap(Map map);
+    void AddMap(Map&& map);
 
-    const std::vector<Map> &GetMaps() const
-    {
-        return maps_;
-    }
+    GameSession* AddSession(const Map::Id& map);
 
-    const Map *FindMap(const Map::Id &id) const noexcept
-    {
-        if (auto it = map_id_to_index_.find(id); it != map_id_to_index_.end())
-        {
-            return &maps_.at(it->second);
-        }
-        return nullptr;
-    }
+    GameSession* SessionIsExists(const Map::Id& id);
 
-    GameSession *AddGameSession(const Map::Id &map);
-    GameSession *ExitSession(const Map::Id &map);
+    void SetDefaultDogSpeed(double new_speed);
 
-    double GetDefaultDogSpeed() const
-    {
-        return default_dog_speed_;
-    }
+    double GetDefaultDogSpeed() const;
 
-    void SetDefaultDogSpeed(double new_speed)
-    {
-        default_dog_speed_ = new_speed;
-    }
+    const Maps& GetMaps() const noexcept;
 
-    void GameState(double tick);
+    const Map* FindMap(const Map::Id& id) const noexcept;
 
-    void UpdateDogsPos(GameSession::Dogs &dogs, const Map *map, double tick);
+    void UpdateGameState(double delta);
+private:
+    void UpdateAllDogsPositions(std::deque<Dog>& dogs, const Map* map, double delta);
 
-    bool CheckDogOnRoad(const Dog::DogPosition &pos, const Road &road) const;
+    void UpdateDogPos(Dog& dog, const std::vector<const Road*>& roads, double delta);
 
-  private:
+    bool IsInsideRoad(const Dog::PairDouble& getting_pos, const Point& start, const Point& end) const;
+
     using MapIdHasher = util::TaggedHasher<Map::Id>;
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
-    using Session = std::unordered_map<Map::Id, std::vector<GameSession>, MapIdHasher>;
+    using SessionsByMapId = std::unordered_map<Map::Id, std::deque<GameSession>, MapIdHasher>;
 
-    std::vector<Map> maps_;
+    Maps maps_;
+    SessionsByMapId map_id_to_sessions_;
     MapIdToIndex map_id_to_index_;
-    Session game_session_;
     double default_dog_speed_ = 1.0;
 };
 
-} // namespace model
+}  // namespace model

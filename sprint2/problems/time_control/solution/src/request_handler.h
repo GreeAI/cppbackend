@@ -345,7 +345,9 @@ class HandlerApiRequest : public LogicHandler
                     json::object tick_time = json::parse(req.body()).as_object();
                     if (tick_time.count("timeDelta"))
                     {
-                        std::string respons_body = app_.TickTime(tick_time.at("timeDelta").as_int64());
+                        double tick = static_cast<double>(tick_time.at("timeDelta").as_int64()) / 1000;
+                        std::cout << "Tick in request_handler.h: " << tick;
+                        std::string respons_body = app_.TickTime(tick);
                         return text_response(http::status::ok, respons_body, ContentType::JSON_HTML, "no-cache");
                     }
                     json::object error_code;

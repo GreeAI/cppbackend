@@ -1,4 +1,5 @@
 #include "app.h"
+#include <iostream>
 
 namespace app
 {
@@ -16,15 +17,16 @@ std::string JoinGameUseCase::Join(std::string &map_id, std::string &user_name)
         throw JoinGameError(JoinGameErrorReason::InvalidName);
     }
 
-    model::GameSession *game_session = game_.ExitSession(model::Map::Id(map_id));
+    model::GameSession *game_session = game_.SessionIsExists(model::Map::Id(map_id));
     if (game_session == nullptr)
     {
-        game_session = game_.AddGameSession(model::Map::Id(map_id));
+        game_session = game_.AddSession(model::Map::Id(map_id));
     }
     model::Dog *dog =
-        game_session->AddDog(random_id_, user_name,
-                             /*RandomPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())*/ model::Dog::Position(GetFirstPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())), // Delete commit
-                             {0, 0}, model::Directions::NORTH);
+        game_session->AddDog(random_id_, model::Dog::Name(user_name),
+                             /*RandomPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())*/ 
+                             model::Dog::Position(GetFirstPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())), // Delete commit
+                             model::Dog::Speed({0., 0.}), model::Direction::NORTH);
 
     std::pair<players::Token, std::shared_ptr<players::Player>> player =
         players_.AddPlayer(random_id_, user_name, dog, game_session);
@@ -62,12 +64,10 @@ double JoinGameUseCase::GetRandomInt(int first, int second) const
     return first + rand() % (second - first + 1);
 }
 
-model::Dog::Position JoinGameUseCase::GetFirstPos(const model::Map::Roads &roads)
+model::Dog::PairDouble JoinGameUseCase::GetFirstPos(const model::Map::Roads &roads) const
 {
     const model::Point& pos = roads.begin()->GetStart();
-    model::Dog::DogPosition dog_pos{static_cast<double>(pos.x), static_cast<double>(pos.y)};
-    model::Dog::Position first_pos(dog_pos);
-    return first_pos;
+    return {static_cast<double>(pos.x), static_cast<double>(pos.y)};
 }
 
 } // namespace app

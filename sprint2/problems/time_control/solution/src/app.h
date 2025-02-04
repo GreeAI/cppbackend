@@ -4,6 +4,7 @@
 
 #include "model.h"
 #include "players.h"
+#include <iostream>
 
 namespace app
 {
@@ -106,24 +107,26 @@ class GameStateUseCase
             json::object player_state;
             const model::Dog::Position pos = player->GetDog()->GetPosition();
             player_state["pos"] = {pos.operator*().x, pos.operator*().y};
+            std::cout <<"GetState Pos: x:" << pos.operator*().x << " y:" << pos.operator*().y << std::endl;
 
-            const std::pair<int, int> speed = player->GetDog()->GetSpeed();
-            player_state["speed"] = {speed.first, speed.second};
+            const model::Dog::Speed speed = player->GetDog()->GetSpeed();
+            player_state["speed"] = {speed.operator*().x, speed.operator*().y};
+            std::cout <<"GetState Speed: x:" << speed.operator*().x << " y:" << speed.operator*().y << std::endl;
 
-            model::Directions dir = player->GetDog()->GetDirection();
-            if (dir == model::Directions::NORTH)
+            model::Direction dir = player->GetDog()->GetDirection();
+            if (dir == model::Direction::NORTH)
             {
                 player_state["dir"] = "U";
             }
-            else if (dir == model::Directions::SOUTH)
+            else if (dir == model::Direction::SOUTH)
             {
                 player_state["dir"] = "D";
             }
-            else if (dir == model::Directions::WEST)
+            else if (dir == model::Direction::WEST)
             {
                 player_state["dir"] = "L";
             }
-            else if (dir == model::Directions::EAST)
+            else if (dir == model::Direction::EAST)
             {
                 player_state["dir"] = "R";
             }
@@ -142,29 +145,38 @@ class GameStateUseCase
 
     static std::string SetPlayerAction(std::shared_ptr<players::Player> player, std::string move_dir)
     {
-        double dog_speed = player->GetGameSession()->GetMap()->GetDogSpeed();
+        float dog_speed = player->GetGameSession()->GetMap()->GetDogSpeed();
+        model::Direction new_dir;
+        model::Dog::Speed new_speed({0, 0});
+        
         if (move_dir == "U")
         {
-            player->GetDog()->SetSpeed({0, -dog_speed});
+            new_speed = model::Dog::Speed({0, -dog_speed});
+            new_dir = model::Direction::NORTH;
         }
         else if (move_dir == "D")
         {
-            player->GetDog()->SetSpeed({0, dog_speed});
+            new_speed = model::Dog::Speed({0, dog_speed});
+            new_dir = model::Direction::SOUTH;
         }
         else if (move_dir == "L")
         {
-            player->GetDog()->SetSpeed({-dog_speed, 0});
+            new_speed = model::Dog::Speed({-dog_speed, 0});
+            new_dir = model::Direction::WEST;
         }
         else if (move_dir == "R")
         {
-            player->GetDog()->SetSpeed({dog_speed, 0});
+            new_speed = model::Dog::Speed({dog_speed, 0});
+            new_dir = model::Direction::EAST;
         }
-        
+        player->GetDog()->SetSpeed(new_speed);
+        player->GetDog()->SetDirection(new_dir);
         return "{}";
     }
 
-    std::string TickTime(double tick, model::Game& game) {
-        game.GameState(tick);
+    std::string TickTimeUseCase(double tick, model::Game &game)
+    {
+        game.UpdateGameState(tick);
         return "{}";
     }
 
@@ -184,11 +196,11 @@ class JoinGameUseCase
     std::pair<double, double> RandomPos(const model::Map::Roads &roads) const;
     double GetRandomInt(int first, int second) const;
 
-    model::Dog::Position GetFirstPos(const model::Map::Roads& roads);
+    model::Dog::PairDouble GetFirstPos(const model::Map::Roads &roads) const;
 
   private:
     model::Game &game_;
-    int random_id_ = 0;
+    int random_id_ = 1;
     players::Players &players_;
 };
 
@@ -224,8 +236,9 @@ class Aplication
         return GameStateUseCase::SetPlayerAction(player, move_dir);
     }
 
-    std::string TickTime(double tick) {
-        return game_state_.TickTime(tick, game_);
+    std::string TickTime(double tick)
+    {
+        return game_state_.TickTimeUseCase(tick, game_);
     }
 
   private:

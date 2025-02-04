@@ -27,7 +27,7 @@ void LoadingRoadIntoMap(model::Map &map, const json::array &roads_array)
             model::Road road(model::Road::HORIZONTAL, start, end);
             map.AddRoad(road);
         }
-        else
+        else if (road_obj.contains("y1"))
         {
             model::Coord end = static_cast<int>(road_obj.at("y1").as_int64());
             model::Road road(model::Road::VERTICAL, start, end);
@@ -97,16 +97,43 @@ model::Game LoadGame(const std::filesystem::path &json_path)
         model::Map::Id id{map_obj.at("id").as_string().c_str()};
         std::string name = json::value_to<std::string>(map_obj.at("name"));
         model::Map map(id, name);
+        float dog_speed = game.GetDefaultDogSpeed();
+
+        try
+        {
+            if (auto it = map_obj.find("dogSpeed"); it != map_obj.end())
+            {
+                dog_speed = it->value().as_double();
+            }
+        }
+        catch (...)
+        {
+        }
+        try
+        {
+            json::object attributes = json::parse(json_str).as_object();
+
+            if (auto it = attributes.find("defaultDogSpeed"); it != attributes.end())
+            {
+                game.SetDefaultDogSpeed(it->value().as_double());
+            }
+        }
+        catch (std::exception &ex)
+        {
+            std::cerr << ex.what() << std::endl;
+        }
 
         LoadingRoadIntoMap(map, map_obj.at("roads").as_array());
         LoadingBuildingsIntoMap(map, map_obj.at("buildings").as_array());
         LoadingOfficesIntoMap(map, map_obj.at("offices").as_array());
+        map.AddDogSpeed(dog_speed);
 
-        game.AddMap(map);
+        game.AddMap(std::move(map));
     }
 
     return game;
 }
+/*---------------------------------------Infomation on map for response---------------------------------------*/
 
 const std::string MapIdName(const model::Game::Maps &maps)
 {
