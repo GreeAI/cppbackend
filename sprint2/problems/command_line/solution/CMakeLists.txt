@@ -7,11 +7,6 @@ set(CMAKE_BUILD_TYPE Debug)
 include(${CMAKE_BINARY_DIR}/build-debug/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-find_package(Boost 1.78.0 REQUIRED)
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif()
-
 set(THREADS_PREFER_PTHREAD_FLA`G ON)
 find_package(Threads REQUIRED)
 
@@ -33,8 +28,8 @@ add_executable(game_server
 	src/boost_logger.h
 	src/players.cpp
 	src/players.h
-    src/app.cpp
-    src/app.h
+  src/app.cpp
+  src/app.h
 )
 
 target_link_libraries(game_server PRIVATE Threads::Threads)
