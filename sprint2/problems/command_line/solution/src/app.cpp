@@ -44,7 +44,8 @@ JoinGameUseCase::RandomPos(const model::Map::Roads &roads) const {
     double x = GetRandomInt(road.GetStart().x, road.GetEnd().x);
     double y = road.GetStart().y;
     return {x, y};
-  } else {
+  }
+  else {
     double x = road.GetStart().x;
     double y = GetRandomInt(road.GetStart().y, road.GetEnd().y);
     return {x, y};
