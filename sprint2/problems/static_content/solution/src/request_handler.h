@@ -8,10 +8,7 @@
 #include <map>
 #include <filesystem>
 #include <cassert>
-<<<<<<< HEAD
 #include <variant>
-=======
->>>>>>> 95530bb (Fix)
 
 namespace http_handler {
     
@@ -52,13 +49,9 @@ public:
         constexpr static std::string_view TEXT_HTML = "text/html"sv;
         constexpr static std::string_view TEXT_JS = "text/javascript"sv;
         constexpr static std::string_view TEXT_PLAIN = "text/plain"sv;
-<<<<<<< HEAD
         constexpr static std::string_view TEXT_CSS = "text/css"sv;
         constexpr static std::string_view JSON_HTML = "application/json"sv;
         constexpr static std::string_view APP_XML = "application/xml"sv;
-=======
-        constexpr static std::string_view JSON_HTML = "application/json"sv;
->>>>>>> 95530bb (Fix)
         constexpr static std::string_view IMAGE_JPEG = "image/jpeg"sv;
         constexpr static std::string_view IMAGE_SVG = "image/svg+xml"sv;
         constexpr static std::string_view EMPTY = "application/octet-stream"sv;
@@ -94,13 +87,9 @@ public:
     bool StartWithStr(const std::string& decoded, const std::string& target);
 
     bool IsSubPath(fs::path path, fs::path base);
-<<<<<<< HEAD
     std::string ToLower(const std::string str);
     std::string_view GetContentType(const std::string& req_target);
 
-=======
-    std::string_view GetContentType(std::string req_target);
->>>>>>> 95530bb (Fix)
 
 private:
 
