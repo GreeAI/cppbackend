@@ -4,10 +4,7 @@
 #include <fstream>
 
 namespace http_handler {
-<<<<<<< HEAD
-=======
     //Разбить на отдельные методы, добавить валидацию путя
->>>>>>> 95530bb (Fix)
     RequestHandler::VariantResponse RequestHandler::HandleRequest(StringRequest&& req) {
         const auto text_response = [this, &req](http::status status, std::string_view text, std::string_view content_type) {
             return MakeStringResponse(status, text, req.version(), req.keep_alive(), content_type);
@@ -17,53 +14,14 @@ namespace http_handler {
         };
         try{
             if(req.method() == http::verb::get){
-<<<<<<< HEAD
-                std::string decoded = URLDecode(std::string(req.target()));
-
-                if(decoded.empty() || decoded == "/") {
-                    decoded = "index file";
-                }
-
-                if(decoded == "/api/v1/maps") {
-                    const std::string respons_body = json_loader::MapIdName(game_.GetMaps());
-=======
                 std::string decoded = URLDecode(req.target().data());
-                std::cout << decoded;
                 if(decoded == "/api/v1/maps") {
                     const model::Game::Maps maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapIdName(maps);
->>>>>>> 95530bb (Fix)
                     return text_response(http::status::ok, respons_body, ContentType::JSON_HTML);
                 } 
                 else if (StartWithStr(decoded ,"/api/v1/maps/")) {
                     std::string map_id = decoded.substr(std::string_view("/api/v1/maps/").length());
-<<<<<<< HEAD
-                    const std::string respons_body = json_loader::MapFullInfo(game_.GetMaps());
-                    if(respons_body.find(map_id) != std::string::npos) {
-                        return text_response(http::status::ok, respons_body, ContentType::JSON_HTML);
-                    }
-                    std::string error_code = json_loader::StatusCodeProcessing(404);
-                    return text_response(http::status::not_found, error_code, ContentType::JSON_HTML);
-                }
-                else if (StartWithStr(decoded, "/api")) {
-                    std::string respons_body = json_loader::StatusCodeProcessing(400);
-                    return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML);
-                }
-                else {
-                    std::string decoded_file = "index.html";
-                    if(decoded != "index file") {
-                        decoded_file = URLDecode(std::string(req.target().substr(1)));
-                    }
-                    http::file_body::value_type file;
-                    std::string_view content_type = GetContentType(decoded_file);
-                    fs::path required_path(decoded_file);
-                    fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
-                    if (!IsSubPath(summary_path, static_path_root_)) {
-                        return text_response(http::status::forbidden, "Access denied", ContentType::TEXT_PLAIN);
-                    }
-                    if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        return text_response(http::status::not_found, "Need more learning", ContentType::TEXT_PLAIN);
-=======
                     const model::Game::Maps& maps = game_.GetMaps();
                     const std::string respons_body = json_loader::MapFullInfo(maps);
                     if(respons_body.find(map_id) != std::string::npos) {
@@ -73,12 +31,7 @@ namespace http_handler {
                     std::string error_code = json_loader::StatusCodeProcessing(status_code);
                     return text_response(http::status::not_found, error_code, ContentType::JSON_HTML);
                 }
-                else if (StartWithStr(decoded, "/api")) {
-                    int status_code = 400;
-                    std::string respons_body = json_loader::StatusCodeProcessing(status_code);
-                    return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML); 
-                }
-                else if (StartWithStr(decoded, "/")) {
+                else if(StartWithStr(decoded, "/")) {
                     decoded == "/" ? decoded = "index.html" : decoded = decoded.substr(1);
                     if(decoded.empty()) {
                         return text_response(http::status::not_found, "/", ContentType::TEXT_PLAIN);
@@ -86,13 +39,17 @@ namespace http_handler {
                     http::file_body::value_type file;
                     std::string_view content_type = GetContentType(decoded);
                     fs::path required_path(decoded);
+                    std:: cout << decoded;
                     fs::path summary_path = fs::weakly_canonical(static_path_root_ / required_path);
                     if (sys::error_code ec; file.open(summary_path.string().data(), beast::file_mode::read, ec), ec) {
-                        std::string empty_body;
                         return text_response(http::status::not_found, "/", ContentType::TEXT_PLAIN);
->>>>>>> 95530bb (Fix)
                     }
                     return file_response(http::status::ok, file, content_type);
+                }
+                else {
+                    int status_code = 400;
+                    std::string respons_body = json_loader::StatusCodeProcessing(status_code);
+                    return text_response(http::status::bad_request, respons_body, ContentType::JSON_HTML);
                 }
             }
             return text_response(http::status::method_not_allowed, "Invalid method", ContentType::JSON_HTML);
@@ -102,10 +59,6 @@ namespace http_handler {
         }
     }
 
-<<<<<<< HEAD
-//URL-декодератор 
-=======
->>>>>>> 95530bb (Fix)
 std::string RequestHandler::URLDecode(const std::string& encoded) {
     std::string decoded;
     for (size_t i = 0; i < encoded.length(); ++i) {
@@ -125,10 +78,6 @@ std::string RequestHandler::URLDecode(const std::string& encoded) {
     return decoded;
 }
 
-<<<<<<< HEAD
-//Аналог start_with для std::string
-=======
->>>>>>> 95530bb (Fix)
 bool RequestHandler::StartWithStr(const std::string& decoded, const std::string& target) {
     if (target.size() > decoded.size()) return false;
     return decoded.compare(0, target.size(), target) == 0;
@@ -149,51 +98,6 @@ bool RequestHandler::IsSubPath(fs::path path, fs::path base) {
     return true;
 }
 
-<<<<<<< HEAD
-//Строку в строчные буквы, для GetContentType
-std::string RequestHandler::ToLower(const std::string str){
-    std::string result;
-    for(char c : str){
-        result.push_back(std::tolower(c));
-    }
-
-    return result;
-}
-
-//Находит тип выводимых данных в content-type по расширению
-std::string_view RequestHandler::GetContentType(const std::string& req_target) {
-    size_t point = req_target.find_last_of('.');
-    std::string file_extension = ToLower(std::string(req_target.substr(point + 1, req_target.npos)));
-
-    if (file_extension == "html" || file_extension == "htm") {
-        return RequestHandler::ContentType::TEXT_HTML;
-    }
-    else if (file_extension == "js") {
-        return RequestHandler::ContentType::TEXT_JS;
-    }
-    else if (file_extension == "txt") {
-        return RequestHandler::ContentType::TEXT_PLAIN;
-    }
-    else if (file_extension == "json") {
-        return RequestHandler::ContentType::JSON_HTML;
-    }
-    else if (file_extension == "jpeg" || file_extension == "jpg" || file_extension == "jpe") {
-        return RequestHandler::ContentType::IMAGE_JPEG;
-    }
-    else if (file_extension == "svg" || file_extension == "svgz") {
-        return RequestHandler::ContentType::IMAGE_SVG;
-    }
-    else if (file_extension == "xml") {
-        return RequestHandler::ContentType::APP_XML;
-    }
-    else if (file_extension == "css") {
-        return RequestHandler::ContentType::TEXT_CSS;
-    }
-    else {
-        return RequestHandler::ContentType::EMPTY;
-    }
-}
-=======
 std::string_view RequestHandler::GetContentType(std::string req_target) {
         auto point = req_target.find_last_of('.');
         std::string file_extension = std::string(req_target.substr(point + 1, req_target.npos));
@@ -220,7 +124,6 @@ std::string_view RequestHandler::GetContentType(std::string req_target) {
             return RequestHandler::ContentType::EMPTY;
         }
     }
->>>>>>> 95530bb (Fix)
 
 }  // namespace http_handler
 
