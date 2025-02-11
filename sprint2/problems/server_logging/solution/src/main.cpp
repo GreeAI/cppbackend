@@ -11,7 +11,6 @@
 using namespace std::literals;
 namespace net = boost::asio;
 namespace sys = boost::system;
-namespace http = boost::beast::http;
 namespace {
 
 // Запускает функцию fn на n потоках, включая текущий
@@ -30,10 +29,10 @@ void RunWorkers(unsigned n, const Fn& fn) {
 }  // namespace
 
 int main(int argc, const char* argv[]) {
-    LOG_TO_CONSOLE();
+    logger::InitBoostLog();
 
     if (argc != 3) {
-        LOG_SERVER_EXIT(EXIT_FAILURE);
+        logger::LogServerExit(EXIT_FAILURE);
         return EXIT_FAILURE;
     }
     try {
@@ -64,7 +63,7 @@ int main(int argc, const char* argv[]) {
         });
 
         // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
-        LOG_SERVER_START(port, address.to_string());
+        logger::LogServerStart(port, address.to_string());
         //std::cout << "Server has started..."sv << std::endl;
 
         // 6. Запускаем обработку асинхронных операций
@@ -72,8 +71,8 @@ int main(int argc, const char* argv[]) {
             ioc.run();
         });
     } catch (const std::exception& ex) {
-        LOG_SERVER_EXIT(EXIT_FAILURE, ex.what());
+        logger::LogServerExit(EXIT_FAILURE, ex.what());
         return EXIT_FAILURE;
     }
-    LOG_SERVER_EXIT(0);
+    logger::LogServerExit(0);
 }
