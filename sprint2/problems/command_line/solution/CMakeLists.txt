@@ -4,7 +4,7 @@ project(game_server CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE Debug)
 
-include(${CMAKE_SOURCE_DIR}/build-debug/conanbuildinfo.cmake)
+include(${CMAKE_BINARY_DIR}/build-debug/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
 find_package(Boost 1.78.0 REQUIRED)
