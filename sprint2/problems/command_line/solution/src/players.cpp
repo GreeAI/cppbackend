@@ -1,4 +1,5 @@
 #include "players.h"
+#include <exception>
 
 namespace players {
 
@@ -28,7 +29,8 @@ std::shared_ptr<Player> Players::FindByDogIdAndMapId(int dog_id,
                                                      std::string map_id) {
   try {
     return dog_map_players_.at(DogMapId(std::make_pair(dog_id, map_id)));
-  } catch (...) {
+  } catch (std::exception &ex) {
+    std::cerr << ex.what() << std::endl;
     return nullptr;
   }
 }
@@ -36,7 +38,8 @@ std::shared_ptr<Player> Players::FindByDogIdAndMapId(int dog_id,
 const std::shared_ptr<Player> Players::FindByToken(Token token) {
   try {
     return token_players_.at(token);
-  } catch (...) {
+  } catch (std::exception &ex) {
+    std::cerr << ex.what() << std::endl;
     return nullptr;
   }
 }

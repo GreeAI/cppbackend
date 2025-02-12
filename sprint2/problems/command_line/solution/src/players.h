@@ -1,3 +1,4 @@
+#pragma once
 #include "model.h"
 
 #include <iomanip>
@@ -72,9 +73,9 @@ private:
     std::string token = out.str();
     size_t size = token.size();
     if (token.size() > 32) {
-      token = token.substr(0, 32);
+      token.resize(32);
     }
-    return Token(token);
+    return Token(std::move(token));
   }
   std::random_device random_device_;
 

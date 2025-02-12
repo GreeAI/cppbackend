@@ -91,7 +91,8 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
       if (auto it = map_obj.find("dogSpeed"); it != map_obj.end()) {
         dog_speed = it->value().as_double();
       }
-    } catch (...) {
+    } catch (std::exception &ex) {
+      std::cerr << ex.what() << std::endl;
     }
     try {
       json::object attributes = json::parse(json_str).as_object();

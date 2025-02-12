@@ -2,6 +2,30 @@
 
 namespace app {
 
+std::pair<std::string, std::string>
+JoinGameError::ParseError(JoinGameErrorReason error) {
+  if (error == JoinGameErrorReason::InvalidMap) {
+    json::object error_code;
+    error_code["code"] = "mapNotFound";
+    error_code["message"] = "Map not found";
+    return std::make_pair("not_found", json::serialize(error_code));
+  } else if (error == JoinGameErrorReason::InvalidName) {
+    json::object error_code;
+    error_code["code"] = "invalidArgument";
+    error_code["message"] = "Invalid name";
+    return std::make_pair("bad_request", json::serialize(error_code));
+  } else if (error == JoinGameErrorReason::InvalidToken) {
+    json::object error_code;
+    error_code["code"] = "invalidToken";
+    error_code["message"] = "Authorization header is required";
+    return std::make_pair("invalidToken", json::serialize(error_code));
+  }
+  json::object error_code;
+  error_code["code"] = "unknownToken";
+  error_code["message"] = "Player token has not been found";
+  return std::make_pair("unknownToken", json::serialize(error_code));
+}
+
 std::string JoinGameUseCase::Join(std::string &map_id, std::string &user_name) {
 
   if (game_.FindMap(model::Map::Id(map_id)) == nullptr) {
@@ -49,10 +73,6 @@ JoinGameUseCase::RandomPos(const model::Map::Roads &roads) const {
     double y = GetRandomInt(road.GetStart().y, road.GetEnd().y);
     return {x, y};
   }
-}
-
-double JoinGameUseCase::GetRandomInt(int first, int second) const {
-  return first + rand() % (second - first + 1);
 }
 
 model::Dog::PairDouble

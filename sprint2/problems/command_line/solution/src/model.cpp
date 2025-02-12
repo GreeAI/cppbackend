@@ -3,6 +3,8 @@
 #include <set>
 #include <stdexcept>
 
+const double HALF_ROAD = 0.4;
+
 namespace model {
 using namespace std::literals;
 
@@ -50,7 +52,8 @@ void Map::AddOffice(Office office) {
   Office &o = offices_.emplace_back(std::move(office));
   try {
     warehouse_id_to_index_.emplace(o.GetId(), index);
-  } catch (...) {
+  } catch (std::exception &ex) {
+    std::cerr << ex.what() << std::endl;
     // Удаляем офис из вектора, если не удалось вставить в unordered_map
     offices_.pop_back();
     throw;
@@ -121,8 +124,8 @@ bool Map::CheckBounds(ConstRoadIt it, const Dog::Position &pos) const {
   if (it->second.IsInvert()) {
     std::swap(start, end);
   }
-  return ((start.x - 0.4 <= (*pos).x && (*pos).x <= end.x + 0.4) &&
-          (start.y - 0.4 <= (*pos).y && (*pos).y <= end.y + 0.4));
+  return ((start.x - HALF_ROAD <= (*pos).x && (*pos).x <= end.x + HALF_ROAD) &&
+          (start.y - HALF_ROAD <= (*pos).y && (*pos).y <= end.y + HALF_ROAD));
 }
 
 /* ------------------------ Game ----------------------------------- */
@@ -136,7 +139,8 @@ void Game::AddMap(Map &&map) {
   } else {
     try {
       maps_.emplace_back(std::move(map));
-    } catch (...) {
+    } catch (std::exception &ex) {
+      std::cerr << ex.what() << std::endl;
       map_id_to_index_.erase(it);
       throw;
     }
@@ -219,16 +223,16 @@ void Game::UpdateDogPos(Dog &dog, const std::vector<const Road *> &roads,
       return;
     }
 
-    if (start.x - 0.4 >= getting_pos.x) {
-      result_pos.x = start.x - 0.4;
-    } else if (getting_pos.x >= end.x + 0.4) {
-      result_pos.x = end.x + 0.4;
+    if (start.x - HALF_ROAD >= getting_pos.x) {
+      result_pos.x = start.x - HALF_ROAD;
+    } else if (getting_pos.x >= end.x + HALF_ROAD) {
+      result_pos.x = end.x + HALF_ROAD;
     }
 
-    if (start.y - 0.4 >= getting_pos.y) {
-      result_pos.y = start.y - 0.4;
-    } else if (getting_pos.y >= end.y + 0.4) {
-      result_pos.y = end.y + 0.4;
+    if (start.y - HALF_ROAD >= getting_pos.y) {
+      result_pos.y = start.y - HALF_ROAD;
+    } else if (getting_pos.y >= end.y + HALF_ROAD) {
+      result_pos.y = end.y + HALF_ROAD;
     }
 
     collisions.insert(result_pos);
@@ -245,10 +249,10 @@ void Game::UpdateDogPos(Dog &dog, const std::vector<const Road *> &roads,
 
 bool Game::IsInsideRoad(const Dog::PairDouble &getting_pos, const Point &start,
                         const Point &end) const {
-  if (start.x - 0.4 <= getting_pos.x) {
-    if (getting_pos.x <= end.x + 0.4) {
-      if (start.y - 0.4 <= getting_pos.y) {
-        if (getting_pos.y <= end.y + 0.4) {
+  if (start.x - HALF_ROAD <= getting_pos.x) {
+    if (getting_pos.x <= end.x + HALF_ROAD) {
+      if (start.y - HALF_ROAD <= getting_pos.y) {
+        if (getting_pos.y <= end.y + HALF_ROAD) {
           return true;
         }
       }

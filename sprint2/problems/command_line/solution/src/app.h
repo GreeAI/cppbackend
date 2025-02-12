@@ -1,10 +1,11 @@
 #pragma once
 
 #include <boost/json.hpp>
+#include <chrono>
+#include <random>
 
 #include "model.h"
 #include "players.h"
-#include <iostream>
 
 namespace app {
 
@@ -24,33 +25,12 @@ struct JoinGameResult {
 
 class JoinGameError {
 public:
-  JoinGameError(JoinGameErrorReason error) : error_(error), error_value() {
+  explicit JoinGameError(JoinGameErrorReason error)
+      : error_(error), error_value() {
     ParseError(error_);
   }
 
-  std::pair<std::string, std::string> ParseError(JoinGameErrorReason error) {
-    if (error == JoinGameErrorReason::InvalidMap) {
-      json::object error_code;
-      error_code["code"] = "mapNotFound";
-      error_code["message"] = "Map not found";
-      return std::make_pair("not_found", json::serialize(error_code));
-    } else if (error == JoinGameErrorReason::InvalidName) {
-      json::object error_code;
-      error_code["code"] = "invalidArgument";
-      error_code["message"] = "Invalid name";
-      return std::make_pair("bad_request", json::serialize(error_code));
-    } else if (error == JoinGameErrorReason::InvalidToken) {
-      json::object error_code;
-      error_code["code"] = "invalidToken";
-      error_code["message"] = "Authorization header is required";
-      return std::make_pair("invalidToken", json::serialize(error_code));
-    } else {
-      json::object error_code;
-      error_code["code"] = "unknownToken";
-      error_code["message"] = "Player token has not been found";
-      return std::make_pair("unknownToken", json::serialize(error_code));
-    }
-  }
+  std::pair<std::string, std::string> ParseError(JoinGameErrorReason error);
 
   std::pair<std::string, std::string> GetError() const { return error_value; }
 
@@ -84,13 +64,9 @@ public:
       json::object player_state;
       const model::Dog::Position pos = player->GetDog()->GetPosition();
       player_state["pos"] = {pos.operator*().x, pos.operator*().y};
-      std::cout << "GetState Pos: x:" << pos.operator*().x
-                << " y:" << pos.operator*().y << std::endl;
 
       const model::Dog::Speed speed = player->GetDog()->GetSpeed();
       player_state["speed"] = {speed.operator*().x, speed.operator*().y};
-      std::cout << "GetState Speed: x:" << speed.operator*().x
-                << " y:" << speed.operator*().y << std::endl;
 
       model::Direction dir = player->GetDog()->GetDirection();
       if (dir == model::Direction::NORTH) {
@@ -155,14 +131,23 @@ public:
   std::string Join(std::string &map_id, std::string &user_name);
 
   std::pair<double, double> RandomPos(const model::Map::Roads &roads) const;
-  double GetRandomInt(int first, int second) const;
+  static double GetRandomInt(int first, int second) {
+    std::minstd_rand generator(static_cast<unsigned>(
+        std::chrono::system_clock::now().time_since_epoch().count()));
+
+    std::uniform_int_distribution<int> distribution(first, second);
+
+    double random_number = distribution(generator);
+
+    return random_number;
+  }
 
   model::Dog::PairDouble GetFirstPos(const model::Map::Roads &roads) const;
 
 private:
+  players::Players &players_;
   model::Game &game_;
   int random_id_ = 1;
-  players::Players &players_;
 };
 
 class Aplication {
@@ -197,7 +182,7 @@ public:
     return game_state_.TickTimeUseCase(tick, game_);
   }
 
-  bool IsTickSet() { return set_tick_; }
+  const bool IsTickSet() { return set_tick_; }
 
 private:
   model::Game &game_;
