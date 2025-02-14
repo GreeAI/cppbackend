@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-set(THREADS_PREFER_PTHREAD_FLA`G ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 add_executable(game_server
