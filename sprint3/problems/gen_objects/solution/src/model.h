@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <random>
+#include <optional>
 
 #include "loot_generator.h"
 #include "tagged.h"
