@@ -15,7 +15,7 @@ void LoadingBuildingsIntoMap(model::Map &map,
                              const boost::json::array &buildings_array);
 void LoadingOfficesIntoMap(model::Map &map,
                            const boost::json::array &offices_array);
-void AddLootTypesFromJson(const json::object& json_map, model::Map& map);
+void LOadLootTypeIntoMap(const json::object& json_map, model::Map& map);
 
 const std::string MapIdName(const model::Game::Maps &maps);
 const std::string MapFullInfo(const model::Map &map);

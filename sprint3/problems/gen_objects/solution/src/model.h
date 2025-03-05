@@ -202,6 +202,8 @@ public:
 
   const Offices &GetOffices() const noexcept;
 
+  const LootTypes& GetLoots() const noexcept;
+
   void AddRoad(const Road &road);
 
   std::vector<const Road *> FindRoadsByCoords(const Dog::Position &pos) const;

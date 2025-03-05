@@ -21,6 +21,8 @@ const Map::Roads &Map::GetRoads() const noexcept { return roads_; }
 
 const Map::Offices &Map::GetOffices() const noexcept { return offices_; }
 
+const Map::LootTypes &Map::GetLoots() const noexcept { return loot_types_; }
+
 void Map::AddRoad(const Road &road) {
   const Road &added_road = roads_.emplace_back(road);
 
@@ -134,25 +136,22 @@ void Map::AddLootType(LootType loot_type) {
 }
 
 unsigned Map::GetRandomLootType() const {
-  return GetRandomInt(0, loot_types_.size());
+  return GetRandomInt(0, loot_types_.size() -  1);
 }
-
 
 /* ------------------------ GameSession ---------------------------- */
 
-void GameSession::UpdateLoot(unsigned loot_count){
-  for(unsigned i = 0; i < loot_count; ++i){
-      unsigned type = map_->GetRandomLootType();
-      const model::Map::Roads& roads = map_->GetRoads();
-      PairDouble pos = Map::GetRandomPos(map_->GetRoads());
+void GameSession::UpdateLoot(unsigned loot_count) {
+  for (unsigned i = 0; i < loot_count; ++i) {
+    unsigned type = map_->GetRandomLootType();
+    const model::Map::Roads &roads = map_->GetRoads();
+    PairDouble pos = Map::GetRandomPos(map_->GetRoads());
 
-      loot_.emplace_back(std::to_string(auto_loot_counter_++), type, pos);
+    loot_.emplace_back(std::to_string(auto_loot_counter_++), type, pos);
   }
 }
 
-const std::vector<Loot>& GameSession::GetLootObjects() const{
-  return loot_;
-}
+const std::vector<Loot> &GameSession::GetLootObjects() const { return loot_; }
 
 /* ------------------------ Game ----------------------------------- */
 
@@ -288,7 +287,7 @@ bool Game::IsInsideRoad(const PairDouble &getting_pos, const Point &start,
   return false;
 }
 
-void Game::SetLootGenerator(double period, double probability){
+void Game::SetLootGenerator(double period, double probability) {
   loot_generator_.emplace(detail::FromDouble(period), probability);
 }
 
@@ -297,20 +296,20 @@ detail::Milliseconds Game::GetLootGenerator() const {
 }
 
 void Game::GenerateLootSession(detail::Milliseconds delta) {
-  try{
-    for(auto& [map_id, sessions] : map_id_to_sessions_){
-      for(GameSession& session : sessions){
-          unsigned current_loot_count = session.GetLootObjects().size();
-          unsigned loot_count = (*loot_generator_).Generate(delta, current_loot_count, session.GetDogs().size());
-          std::cout << "UpdateLoot\n";
-          session.UpdateLoot(loot_count);
+  try {
+    for (auto &[map_id, sessions] : map_id_to_sessions_) {
+      for (GameSession &session : sessions) {
+        unsigned current_loot_count = session.GetLootObjects().size();
+        unsigned loot_count =
+            (*loot_generator_)
+                .Generate(delta, current_loot_count, session.GetDogs().size());
+        std::cout << "UpdateLoot\n";
+        session.UpdateLoot(loot_count);
       }
     }
-  }
-  catch(std::exception ex) {
+  } catch (std::exception ex) {
     std::cerr << ex.what() << std::endl;
-  } 
-  
+  }
 }
 
 } // namespace model

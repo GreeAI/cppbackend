@@ -1,8 +1,6 @@
 #include "request_handler.h"
 #include "json_loader.h"
 
-#include <fstream>
-
 namespace http_handler
 {
     using CT = LogicHandler::ContentType;
@@ -129,7 +127,6 @@ namespace http_handler
         return json::serialize(error_code);
     }
     /* ======================================= HandleApiRequest ======================================= */
-    //Придумать как это всё разбить на разные методы
 
     //Jбработка запроса для .../maps...
     std::pair<std::string, bool> HandlerApiRequest::MapRequest(const std::string &decoded, const model::Game &game)

@@ -1,5 +1,7 @@
 #include "json_loader.h"
 #include <boost/json.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -62,34 +64,40 @@ void LoadingOfficesIntoMap(model::Map &map, const json::array &offices_array) {
   }
 }
 
-void AddLootTypesFromJson(model::Map &map, const json::array &loot_array) {
-  for (const json::value &value : loot_array) {
-    json::object loot_type = value.as_object();
+void LOadLootTypeIntoMap(model::Map &map, const json::array &loot_array) {
+  for (const json::value &loot_value : loot_array) {
+    json::object loot_type = loot_value.as_object();
 
-    model::LootType lt;
+    model::LootType loot_t;
     if (loot_type.contains("name")) {
-      lt.name = loot_type.at("name").as_string();
+      loot_t.name = loot_type.at("name").as_string();
+      std::cout << "Name" << loot_t.name.value() << std::endl;
     }
     if (loot_type.contains("file")) {
-      lt.file = loot_type.at("file").as_string();
+      loot_t.file = loot_type.at("file").as_string();
+      std::cout << "File" << loot_t.file.value() << std::endl;
     }
     if (loot_type.contains("type")) {
-      lt.type = loot_type.at("type").as_string();
+      loot_t.type = loot_type.at("type").as_string();
+      std::cout << "Type" << loot_t.type.value() << std::endl;
     }
     if (loot_type.contains("rotation")) {
-      lt.rotation = loot_type.at("rotation").as_int64();
+      loot_t.rotation = loot_type.at("rotation").as_int64();
+      std::cout << "Rotation" << loot_t.rotation.value() << std::endl;
     }
     if (loot_type.contains("color")) {
-      lt.color = loot_type.at("color").as_string();
+      loot_t.color = loot_type.at("color").as_string();
+      std::cout << "Color" << loot_t.color.value() << std::endl;
     }
     if (loot_type.contains("scale")) {
-      lt.scale = loot_type.at("scale").as_double();
+      loot_t.scale = loot_type.at("scale").as_double();
+      std::cout << "Scale" << loot_t.scale.value() << std::endl;
     }
 
-    map.AddLootType(lt);
+    map.AddLootType(loot_t);
+    
   }
 }
-
 
 model::Game LoadGame(const std::filesystem::path &json_path) {
   if (!std::filesystem::exists(json_path)) {
@@ -126,14 +134,15 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
           it != attributes.end()) {
         game.SetDefaultDogSpeed(it->value().as_double());
       }
-      
-      if(auto it = attributes.find("lootGeneratorConfig"); it != attributes.end()){
+
+      if (auto it = attributes.find("lootGeneratorConfig");
+          it != attributes.end()) {
         json::object loot_gen_config = it->value().as_object();
         double period = loot_gen_config.at("period").as_double() * 1000;
         double probability = loot_gen_config.at("probability").as_double();
 
         game.SetLootGenerator(period, probability);
-    }
+      }
     } catch (std::exception &ex) {
       std::cerr << ex.what() << std::endl;
     }
@@ -141,7 +150,7 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
     LoadingRoadIntoMap(map, map_obj.at("roads").as_array());
     LoadingBuildingsIntoMap(map, map_obj.at("buildings").as_array());
     LoadingOfficesIntoMap(map, map_obj.at("offices").as_array());
-    AddLootTypesFromJson(map, map_obj.at("offices").as_array());
+    LOadLootTypeIntoMap(map, map_obj.at("lootTypes").as_array());
     map.AddDogSpeed(dog_speed);
 
     game.AddMap(std::move(map));
@@ -177,6 +186,7 @@ const std::string MapFullInfo(const model::Map &map) {
   auto roads = map.GetRoads();
   auto buildings = map.GetBuildings();
   auto offices = map.GetOffices();
+  auto loots = map.GetLoots();
 
   map_object["id"] = id.operator*();
   map_object["name"] = name;
@@ -220,6 +230,31 @@ const std::string MapFullInfo(const model::Map &map) {
     offices_array.push_back(office_object);
   }
   map_object["offices"] = offices_array;
+
+  json::array loot_array = json::array();
+  for (const auto &loot : loots) {
+    json::object loot_object;
+    if (loot.name.has_value()) {
+      loot_object["name"] = *loot.name;
+    }
+    if (loot.file.has_value()) {
+      loot_object["file"] = *loot.file;
+    }
+    if (loot.type.has_value()) {
+      loot_object["type"] = *loot.type;
+    }
+    if (loot.rotation.has_value()) {
+      loot_object["rotation"] = *loot.rotation;
+    }
+    if (loot.color.has_value()) {
+      loot_object["color"] = *loot.color;
+    }
+    if (loot.scale.has_value()) {
+      loot_object["scale"] = *loot.scale;
+    }
+    loot_array.push_back(loot_object);
+  }
+  map_object["lootTypes"] = loot_array;
 
   return json::serialize(map_object);
 }
