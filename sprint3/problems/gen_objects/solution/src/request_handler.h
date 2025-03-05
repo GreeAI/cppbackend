@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/beast/http/verb.hpp>
 #include <boost/json.hpp>
 #include <cassert>
 #include <filesystem>
@@ -80,6 +81,8 @@ private:
   Handler handler_;
   std::chrono::steady_clock::time_point last_tick_;
 };
+
+// ------------------------------- LogicHandler -------------------------------------
 
 class LogicHandler {
 public:
@@ -171,6 +174,8 @@ private:
   std::set<std::string> methods_;
 };
 
+// -----------------------HandleApiRequest---------------------------
+
 class HandlerApiRequest : public LogicHandler {
 public:
   explicit HandlerApiRequest(Strand api_strand, model::Game &game,
@@ -231,22 +236,21 @@ public:
     };
 
     try {
-      // auto req_method = req.method();
-      // auto version = req.version();
-      // auto kepp_alive = req.keep_alive();
       std::string decoded = LogicHandler::URLDecode(std::string(req.target()));
 
       if (StartWithStr(decoded, "/api/v1/maps")) {
-        if(req.method() != http::verb::get) {
+        if (req.method() != http::verb::get &&
+            req.method() != http::verb::head) {
           json::object error_code;
           error_code["code"] = "invalidMethod";
           error_code["message"] = "Invalid method";
           return error_response(
               http::status::method_not_allowed, json::serialize(error_code),
-              ContentType::JSON_HTML, "no-cache", "GET");
+              ContentType::JSON_HTML, "no-cache", "GET, HEAD");
         }
-        
+
         std::pair<std::string, bool> request = MapRequest(decoded, game);
+
         if (request.second == false) {
           return error_response(http::status::not_found, request.first,
                                 ContentType::JSON_HTML);
