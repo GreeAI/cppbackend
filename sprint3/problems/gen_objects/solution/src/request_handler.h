@@ -237,6 +237,15 @@ public:
       std::string decoded = LogicHandler::URLDecode(std::string(req.target()));
 
       if (StartWithStr(decoded, "/api/v1/maps")) {
+        if(req.method() != http::verb::get) {
+          json::object error_code;
+          error_code["code"] = "invalidMethod";
+          error_code["message"] = "Invalid method";
+          return error_response(
+              http::status::method_not_allowed, json::serialize(error_code),
+              ContentType::JSON_HTML, "no-cache", "GET");
+        }
+        
         std::pair<std::string, bool> request = MapRequest(decoded, game);
         if (request.second == false) {
           return error_response(http::status::not_found, request.first,
