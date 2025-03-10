@@ -730,3 +730,14 @@ sprint3/problems/flamegraph/solution/graph.svg
 *.xml
 
 **/.DS_Store
+sprint3/problems/urldecode/solution/build-release/conanbuildinfo_multi.cmake
+.gitignore
+sprint3/problems/urldecode/solution/build-release/conan.lock
+.gitignore
+sprint3/problems/urldecode/solution/build-release/conanbuildinfo_release.cmake
+sprint3/problems/urldecode/solution/build-release/conanbuildinfo.txt
+.gitignore
+sprint3/problems/urldecode/solution/build-release/conaninfo.txt
+sprint3/problems/urldecode/solution/build-release/graph_info.json
+sprint3/problems/urldecode/solution/build-release/tests
+sprint3/problems/urldecode/solution/build-release/urldecode
