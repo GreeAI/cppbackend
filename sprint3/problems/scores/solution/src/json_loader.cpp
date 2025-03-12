@@ -89,7 +89,6 @@ void LOadLootTypeIntoMap(model::Map &map, const json::array &loot_array) {
     }
     if (loot_type.contains("value")) {
       loot_t.value = loot_type.at("value").as_int64();
-      std::cout << "Value" << loot_t.scale.value() << std::endl;
     }
 
     map.AddLootType(loot_t);

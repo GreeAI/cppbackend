@@ -7,6 +7,7 @@ size_t Players::DogMapKeyHasher::operator()(const DogMapId &value) const {
   size_t x = static_cast<size_t>(value.first);
   size_t y = util::TaggedHasher<Map::Id>()(value.second);
 
+  // Для уменьшения коллизий значения x и y умножаются на 2
   return x * 2 + y * 2 * 2;
 }
 

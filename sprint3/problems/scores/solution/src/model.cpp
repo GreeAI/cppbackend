@@ -262,7 +262,7 @@ void Map::AddBagCapacity(int capacity){
   bag_capacity_map_ = capacity;
 }
 
-int Map::GetBagCapacity() const{
+const int Map::GetBagCapacity() const{
   return bag_capacity_map_;
 }
 
@@ -444,7 +444,6 @@ void Game::GenerateLootSession(detail::Milliseconds delta) {
         unsigned loot_count =
             (*loot_generator_)
                 .Generate(delta, current_loot_count, session.GetDogs().size());
-        std::cout << "UpdateLoot\n";
         session.UpdateLoot(loot_count);
       }
     }

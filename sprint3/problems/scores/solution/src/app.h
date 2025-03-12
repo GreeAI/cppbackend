@@ -56,7 +56,7 @@ public:
 
 class GameStateUseCase {
 public:
-  GameStateUseCase(players::Players &players) : players_(players) {}
+  explicit GameStateUseCase(players::Players &players) : players_(players) {}
 
   std::string GetState(players::Token token) const {
 
@@ -227,7 +227,7 @@ public:
     return game_state_.TickTimeUseCase(tick, game_);
   }
 
-  const bool IsTickSet() { return set_tick_; }
+  bool IsTickSet() { return set_tick_; }
 
   void GenerateLoot(model::detail::Milliseconds delta) {
     return game_state_.GenerateLoot(delta, game_);

@@ -1,5 +1,6 @@
 #pragma once
 #include <compare>
+#include <functional>
 #include <utility>
 
 namespace util {
@@ -46,6 +47,9 @@ public:
     Value& operator*() {
         return value_;
     }
+
+    Value& get() { return value_; }
+    const Value& get() const { return value_; }
 
     // Так в C++20 можно объявить оператор сравнения Tagged-типов
     // Будет просто вызван соответствующий оператор для поля value_

@@ -150,9 +150,10 @@ public:
   void CollectItem(Loot loot) { (*bag_).emplace_back(std::move(loot)); }
 
   void ClearBag() {
-    for (const Loot &loot : (*bag_)) {
-      score_ += loot.value;
-    }
+    score_ = std::accumulate(bag_.get().begin(), bag_.get().end(), 0,
+                          [](int sum, const Loot &loot) {
+                              return sum + loot.value;
+                          });
     (*bag_).resize(0);
   }
 
@@ -219,7 +220,7 @@ public:
 
   void AddBagCapacity(int capacity);
 
-  int GetBagCapacity() const;
+  const int GetBagCapacity() const;
 
   static double GetRandomInt(int first, int second) {
     std::minstd_rand generator(static_cast<unsigned>(

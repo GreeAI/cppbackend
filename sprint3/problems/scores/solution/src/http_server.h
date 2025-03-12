@@ -10,7 +10,6 @@
 #include <boost/beast/http.hpp>
 #include <iostream>
 
-#include "boost_logger.h"
 namespace http_server {
 
 namespace net = boost::asio;
