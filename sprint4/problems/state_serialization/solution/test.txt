@@ -60,7 +60,7 @@ curl -X POST "http://127.0.0.1:8080/api/v1/game/tick" -H "Content-Type: applicat
 
 
 curl -X POST "http://127.0.0.1:8080/api/v1/game/join" -H "Content-Type: application/json" -d '{"userName":"No, no, no", "mapId":"map1"}'
-curl -X GET "http://127.0.0.1:8080/api/v1/game/state" -H "Authorization: Bearer 00000000000000007b0a8d45d5d3d842"
+curl -X GET "http://127.0.0.1:8080/api/v1/game/state" -H "Authorization: Bearer 000000000000000074e2c4ee64ac69f3"
 curl -X POST "http://127.0.0.1:8080/api/v1/game/player/action" -H "Content-Type: application/json" -H "Authorization: Bearer 0000000000000000536533a9f3e31706" -d '{"move": "L"}'
 curl -X POST "http://127.0.0.1:8080/api/v1/game/tick" -H "Content-Type: application/json" -d '{"timeDelta": 1000}'
 

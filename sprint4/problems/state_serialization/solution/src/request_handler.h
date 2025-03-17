@@ -326,13 +326,16 @@ void SaveState() {
             return text_response(http::status::ok, respons_body,
                                  ContentType::JSON_HTML, "no-cache");
           }
-          json::object error_code;
-          error_code["code"] = "unknownToken";
-          error_code["message"] = "Player token has not been found";
-          return text_response(http::status::unauthorized,
-                               json::serialize(error_code),
-                               ContentType::JSON_HTML, "no-cache");
-        } catch (std::exception &e) {
+
+          // json::object error_code;
+          // error_code["code"] = "unknownToken";
+          // error_code["message"] = "Player token has not been found";
+          // return text_response(http::status::unauthorized,
+          //                      json::serialize(error_code),
+          //                      ContentType::JSON_HTML, "no-cache");
+        } 
+        catch (std::exception &e) 
+        {
           json::object error_code;
           error_code["code"] = "invalidToken";
           error_code["message"] = "Authorization header is missing";
