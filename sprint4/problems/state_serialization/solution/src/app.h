@@ -7,6 +7,7 @@
 #include <chrono>
 #include <fstream>
 #include <random>
+#include <filesystem>
 
 #include "model.h"
 #include "model_serialization.h"
@@ -15,6 +16,7 @@
 namespace app {
 namespace net = boost::asio;
 namespace sys = boost::system;
+namespace fs = std::filesystem;
 using namespace model;
 using namespace players;
 
@@ -288,15 +290,29 @@ public:
 
   void SaveState() {
     using namespace std::literals;
-    std::fstream fstrm(state_file_, std::ios_base::out  | std::ios_base::trunc);
 
-    if (!fstrm.is_open()) {
-        throw std::runtime_error("Unable to open or create file: " + state_file_);
+    if (state_file_.empty()) {
+        return;
     }
 
-    boost::archive::text_oarchive output_archive{fstrm};
+    fs::create_directory(
+        fs::path(state_file_).parent_path()
+    );
+
+    const std::string output_filename =
+            state_file_ + ".tmp";
+
+    std::ofstream output(output_filename);
+
+    if (!output) {
+        throw std::runtime_error("Cannot open state file");
+    }
+
+    boost::archive::text_oarchive output_archive{output};
     serialization::GameStateRepr writed_game_state(sessions_, players_);
     output_archive << writed_game_state;
+    output.close();
+    fs::rename(output_filename, state_file_);
   }
 
   serialization::GameStateRepr LoadState() {

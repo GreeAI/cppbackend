@@ -80,7 +80,8 @@ ParseCommandLine(int argc, const char *const argv[]) {
 }
 
 // Запускает функцию fn на n потоках, включая текущий
-template <typename Fn> void RunWorkers(unsigned n, const Fn &fn) {
+template <typename Fn>
+void RunWorkers(unsigned n, const Fn &fn) {
   n = std::max(1u, n);
   std::vector<std::jthread> workers;
   workers.reserve(n - 1);
