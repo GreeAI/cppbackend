@@ -40,7 +40,9 @@ public:
     :id_(0), name_(), token_(""){}
 
     PlayerRepr(const std::shared_ptr<players::Player> player, const players::Token token)
-    :id_(player->GetId()), name_(player->GetName()), token_(*(token)){}
+    :id_(player->GetId()), name_(player->GetName()), token_(*(token)){
+        std::cout << *token << " Token in serialiozation\n";
+    }
 
     int GetId() const{
         return id_;

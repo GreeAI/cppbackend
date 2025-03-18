@@ -122,6 +122,8 @@ private:
   std::set<std::string> methods_;
 };
 
+// ---------------------------------------------- HandlerAPiRequest ---------------------------------------------- //
+
 class HandlerApiRequest : public LogicHandler {
 public:
   explicit HandlerApiRequest(Strand api_strand, model::Game &game,
@@ -327,12 +329,12 @@ void SaveState() {
                                  ContentType::JSON_HTML, "no-cache");
           }
 
-          // json::object error_code;
-          // error_code["code"] = "unknownToken";
-          // error_code["message"] = "Player token has not been found";
-          // return text_response(http::status::unauthorized,
-          //                      json::serialize(error_code),
-          //                      ContentType::JSON_HTML, "no-cache");
+           json::object error_code;
+           error_code["code"] = "unknownToken";
+           error_code["message"] = "Player token has not been found";
+           return text_response(http::status::unauthorized,
+                                json::serialize(error_code),
+                               ContentType::JSON_HTML, "no-cache");
         } 
         catch (std::exception &e) 
         {
@@ -407,14 +409,14 @@ void SaveState() {
                                 json::serialize(error_code),
                                 ContentType::JSON_HTML, "no-cache", "POST");
         }
-        //if (app_.IsTickSet()) {
-          //json::object error_code;
-         // error_code["code"] = "invalidArgument";
-         // error_code["message"] = "Invalid endpoint";
-        //  return error_response(http::status::bad_request,
-        //                        json::serialize(error_code),
-       //                         ContentType::JSON_HTML, "no-cache");
-       // }
+        if (app_.IsTickSet()) {
+          json::object error_code;
+          error_code["code"] = "invalidArgument";
+          error_code["message"] = "Invalid endpoint";
+          return error_response(http::status::bad_request,
+                                json::serialize(error_code),
+                                ContentType::JSON_HTML, "no-cache");
+        }
 
         try {
           json::object tick_time = json::parse(req.body()).as_object();

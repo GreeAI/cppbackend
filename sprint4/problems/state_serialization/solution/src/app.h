@@ -375,7 +375,7 @@ public:
   std::string TickTime(double tick) {
     std::string res = game_state_.TickTimeUseCase(tick, game_);
     if (save_case_.has_value()) {
-      save_case_.value().SaveOnTick(save_case_.has_value());
+      save_case_.value().SaveOnTick(set_tick_);
     }
     return res;
   }
@@ -411,6 +411,7 @@ public:
 
             players_.LoadPlayerToken(added_player.second,
                                      Token(player_repr.GetToken()));
+                                     std::cout << player_repr.GetToken() << " Token in app " << std::endl;
             players_.LoadPlayerInSession(added_player.second, session);
           }
         }
