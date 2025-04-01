@@ -22,8 +22,6 @@ void ConnectionPool::ReturnConnection(ConnectionPool::ConnectionPtr&& conn){
     cond_var_.notify_one();
 }
 
-/* ------------------------ ConnectionFactory ----------------------------------- */
-
 inline ConnectionPool::ConnectionPtr ConnectionFactory(const char* db_url){
     auto conn = std::make_shared<pqxx::connection>(db_url);
     conn->prepare("insert", R"(

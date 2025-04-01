@@ -745,3 +745,4 @@ sprint3/problems/urldecode/solution/build-release/tests
 sprint3/problems/urldecode/solution/build-release/urldecode
 sprint4/problems/db_of_books/solution/.vscode/c_cpp_properties.json
 .gitignore
+sprint4/problems/leave_game/solution/test.txt

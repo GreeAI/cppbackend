@@ -9,14 +9,6 @@ using namespace std::literals;
 namespace detail{
 
 using namespace collision_detector;
-/*
-    Класс, предоставляющий всех собак и потерянных объектов
-    в сессии для обработки коллизий
-
-    Предметы — ширина ноль,
-    Игроки — ширина 0,6,
-    Базы — ширина 0,5.
-*/
 
 static const double LOOT_WIDTH = 0;
 static const double DOG_WIDTH = 0.6;
@@ -152,7 +144,7 @@ const Map::LootTypes& Map::GetLootTypes() const noexcept{
 }
 
 int Map::GetRandomLootType() const{
-    return GetRandomNumber(0, loot_types_.size());
+    return GetRandomNumber(0, loot_types_.size() - 1);
 }
 
 void Map::AddRoad(const Road& road) {
@@ -286,8 +278,8 @@ bool Map::CheckBounds(ConstRoadIt it, const Dog::Position& pos) const{
     if(it->second.IsInvert()){
         std::swap(start, end);
     }
-    return ((start.x - 0.4 <= (*pos).x && (*pos).x <= end.x + 0.4) && 
-                (start.y - 0.4 <= (*pos).y && (*pos).y <= end.y + 0.4));
+    return ((start.x - HALF_ROAD <= (*pos).x && (*pos).x <= end.x + HALF_ROAD) && 
+                (start.y - HALF_ROAD <= (*pos).y && (*pos).y <= end.y + HALF_ROAD));
 }
 /* ------------------------ GameSession ----------------------------------- */
 
@@ -498,16 +490,16 @@ void Game::UpdateDogPos(Dog& dog, const std::vector<const Road*>& roads, double 
             return;
         }
 
-        if(start.x - 0.4 >= getting_pos.x) {
-            result_pos.x = start.x - 0.4;
-        } else if(getting_pos.x >= end.x + 0.4){
-            result_pos.x = end.x + 0.4;
+        if(start.x - HALF_ROAD >= getting_pos.x) {
+            result_pos.x = start.x - HALF_ROAD;
+        } else if(getting_pos.x >= end.x + HALF_ROAD){
+            result_pos.x = end.x + HALF_ROAD;
         }
 
-        if(start.y - 0.4 >= getting_pos.y) {
-            result_pos.y = start.y - 0.4;
-        } else if(getting_pos.y >= end.y + 0.4){
-            result_pos.y = end.y + 0.4;
+        if(start.y - HALF_ROAD >= getting_pos.y) {
+            result_pos.y = start.y - HALF_ROAD;
+        } else if(getting_pos.y >= end.y + HALF_ROAD){
+            result_pos.y = end.y + HALF_ROAD;
         }
 
         collisions.insert(result_pos);

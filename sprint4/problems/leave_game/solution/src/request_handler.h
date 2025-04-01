@@ -122,25 +122,15 @@ static StringResponse ReportServerError(http::status status, std::string_view co
 
 class HandlerApiRequest : public LogicHandler {
 public:
-  explicit HandlerApiRequest(Strand api_strand, model::Game &game,
-                             std::optional<double> tick, std::optional<std::string> state_file, std::optional<double> tick_state, bool random_spawn, DatabaseManagerPtr&& db_manager)
-      : app_(game, tick.has_value(), state_file, tick_state, random_spawn, std::move(db_manager), api_strand),
-        ticker_(), loot_ticker_() {
-    app_.GenerateLoot(Milliseconds{0});
-    if (tick.has_value()) {
-      ticker_ = std::make_shared<app::Ticker>(
-          app_.GetStrand(), FromDouble(*tick), [this](Milliseconds delta) {
-            this->app_.TickTime(delta.count() / 1000);
-          });
-      ticker_->Start();
-
-      loot_ticker_ = std::make_shared<app::Ticker>(app_.GetStrand(), game.GetLootGeneratePeriod(), [this](Milliseconds delta){
-                    this->app_.GenerateLoot(delta);
-                });
-
-      loot_ticker_->Start();
-    }
-  }
+  explicit HandlerApiRequest(Strand api_strand,
+                            model::Game &game,
+                            std::optional<double> tick, 
+                            std::optional<std::string> state_file, 
+                            std::optional<double> tick_state_per, 
+                            bool random_spawn, 
+                            DatabaseManagerPtr&& db_manager)
+      : app_(game, tick, state_file, tick_state_per, random_spawn, std::move(db_manager), api_strand),
+        ticker_(), loot_ticker_() {}
 
 private:
   friend class RequestHandler;
@@ -247,14 +237,14 @@ Strand& GetStrand(){
           json::object error_code;
           error_code["code"] = "unknownToken";
           error_code["message"] = "Player token has not been found";
-          return text_response(http::status::unauthorized,
+          return error_response(http::status::unauthorized,
                                json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         } catch (std::exception &e) {
           json::object error_code;
           error_code["code"] = "invalidToken";
           error_code["message"] = "Authorization header is missing";
-          return text_response(http::status::unauthorized,
+          return error_response(http::status::unauthorized,
                                json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         }
@@ -295,6 +285,7 @@ Strand& GetStrand(){
         }
       }
       /*---------------------------------------------------state---------------------------------------------------*/
+
       if (StartWithStr(decoded, "/api/v1/game/state")) {
         if (req.method() != http::verb::get &&
             req.method() != http::verb::head) {
@@ -329,7 +320,7 @@ Strand& GetStrand(){
            json::object error_code;
            error_code["code"] = "unknownToken";
            error_code["message"] = "Player token has not been found";
-           return text_response(http::status::unauthorized,
+           return error_response(http::status::unauthorized,
                                 json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         } 
@@ -338,12 +329,13 @@ Strand& GetStrand(){
           json::object error_code;
           error_code["code"] = "invalidToken";
           error_code["message"] = "Authorization header is missing";
-          return text_response(http::status::unauthorized,
+          return error_response(http::status::unauthorized,
                                json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         }
       }
       /*---------------------------------------------------action---------------------------------------------------*/
+
       if (StartWithStr(decoded, "/api/v1/game/player/action")) {
         if (req.method() != http::verb::post) {
           json::object error_code;
@@ -386,19 +378,20 @@ Strand& GetStrand(){
           json::object error_code;
           error_code["code"] = "unknownToken";
           error_code["message"] = "Player token has not been found";
-          return text_response(http::status::unauthorized,
+          return error_response(http::status::unauthorized,
                                json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         } catch (std::exception &e) {
           json::object error_code;
           error_code["code"] = "invalidToken";
           error_code["message"] = "Authorization header is missing";
-          return text_response(http::status::unauthorized,
+          return error_response(http::status::unauthorized,
                                json::serialize(error_code),
                                ContentType::JSON_HTML, "no-cache");
         }
       }
       /*---------------------------------------------------tick---------------------------------------------------*/
+
       if (StartWithStr(decoded, "/api/v1/game/tick")) {
         if (req.method() != http::verb::post) {
           json::object error_code;
@@ -421,8 +414,7 @@ Strand& GetStrand(){
           json::object tick_time = json::parse(req.body()).as_object();
           if (tick_time.count("timeDelta")) {
             double tick =
-                static_cast<double>(tick_time.at("timeDelta").as_int64()) /
-                1000;
+                static_cast<double>(tick_time.at("timeDelta").as_int64());
             std::string respons_body = app_.TickTime(tick);
             return text_response(http::status::ok, respons_body,
                                  ContentType::JSON_HTML, "no-cache");
@@ -430,7 +422,7 @@ Strand& GetStrand(){
         } catch (std::exception &e) {
           json::object error_code;
           error_code["code"] = "invalidArgument";
-          error_code["message"] = e.what();
+          error_code["message"] = " //tick|| " + std::string(e.what());
           return error_response(http::status::bad_request,
                                 json::serialize(error_code),
                                 ContentType::JSON_HTML, "no-cache");
@@ -475,7 +467,7 @@ Strand& GetStrand(){
                            ContentType::JSON_HTML);
     } catch (std::exception &e) {
       return error_response(http::status::internal_server_error,
-                            "internal_server_error", ContentType::JSON_HTML);
+                            e.what(), ContentType::JSON_HTML);
     }
   }
 
@@ -539,7 +531,7 @@ public:
   explicit RequestHandler(model::Game &game, strct::Args &args,
                           Strand api_strand, DatabaseManagerPtr&& db_manager)
       : game_(game), file_handler(args.root),
-        api_handler{api_strand, game, args.tick, args.state_file, args.save_tick, args.random_spawn, std::move(db_manager)} {}
+        api_handler{api_strand, game, args.tick, args.state_file, args.save_state_tick, args.random_spawn, std::move(db_manager)} {}
 
   RequestHandler(const RequestHandler &) = delete;
   RequestHandler &operator=(const RequestHandler &) = delete;

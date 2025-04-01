@@ -118,7 +118,8 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
     model::Map::Id id{map_obj.at("id").as_string().c_str()};
     std::string name = json::value_to<std::string>(map_obj.at("name"));
     model::Map map(id, name);
-    float dog_speed = game.GetDefaultDogSpeed();
+    double dog_speed = game.GetDefaultDogSpeed();
+    int bag_cap = game.GetDefaultBagCapacity();
 
     try {
       if (auto it = map_obj.find("dogSpeed"); it != map_obj.end()) {
@@ -129,6 +130,12 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
       if (auto it = attributes.find("defaultDogSpeed");
           it != attributes.end()) {
         game.SetDefaultDogSpeed(it->value().as_double());
+      }
+
+      if (auto it = attributes.find("dogRetirementTime");
+          it != attributes.end()) {
+        game.SetDogRetirementTime(
+            static_cast<unsigned>(it->value().as_double()));
       }
 
       if (auto it = attributes.find("defaultBagCapacity");
@@ -144,6 +151,11 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
 
         game.SetLootGenerator(period, probability);
       }
+
+      if (auto it = attributes.find("bagCapacity"); it != attributes.end()) {
+        bag_cap = it->value().as_int64();
+      }
+
     } catch (std::exception &ex) {
       std::cerr << ex.what() << std::endl;
     }
@@ -153,6 +165,7 @@ model::Game LoadGame(const std::filesystem::path &json_path) {
     LoadingOfficesIntoMap(map, map_obj.at("offices").as_array());
     LOadLootTypeIntoMap(map, map_obj.at("lootTypes").as_array());
     map.AddDogSpeed(dog_speed);
+    map.AddBagCapacity(bag_cap);
 
     game.AddMap(std::move(map));
   }

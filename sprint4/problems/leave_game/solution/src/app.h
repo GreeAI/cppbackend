@@ -7,8 +7,10 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <random>
 
+#include "model.h"
 #include "players.h"
 #include "model_serialization.h"
 #include "connection_pool.h"
@@ -18,6 +20,7 @@ namespace app {
     namespace sys = boost::system;
     using namespace model;
     using namespace players;
+    using namespace model::detail;
 
     using SharedPlayer = std::shared_ptr<Player>;
     using Milliseconds = std::chrono::milliseconds;
@@ -51,8 +54,7 @@ namespace app {
                 [self = shared_from_this()](sys::error_code ec) { self->OnTick(ec); });
         }
 
-        void OnTick(sys::error_code ec)
-        {
+        void OnTick(sys::error_code ec) {
             using namespace std::chrono;
             assert(strand_.running_in_this_thread());
 
@@ -60,11 +62,7 @@ namespace app {
                 auto this_tick = Clock::now();
                 auto delta = duration_cast<milliseconds>(this_tick - last_tick_);
                 last_tick_ = this_tick;
-                try {
-                    handler_(delta);
-                } catch (std::exception &ex) {
-                    std::cerr << ex.what() << std::endl;
-                }
+                handler_(delta);
                 ScheduleTick();
             }
         }
@@ -168,13 +166,12 @@ namespace app {
 
         using PlayerTimeClocks = std::unordered_map<const SharedPlayer, PlayerTimeClock, SharedPlayerHash, SharedPlayerEqual>;
 
-        GameStateUseCase(Players &players, DatabaseManagerPtr&& db) : players_(players), db_manager_(std::move(db)) {}
+        GameStateUseCase(Players &players, DatabaseManagerPtr&& db, Game &game) : players_(players), db_manager_(std::move(db)), game_(game) {}
 
-        std::string GetState(Token token) const
+        std::string GetState(Token token) const 
         {
+            const GameSession *game_session = players_.FindByToken(token)->GetGameSession();
 
-            const GameSession *game_session =
-                players_.FindByToken(token)->GetGameSession();
             auto players = players_.FindPlayersBySession(game_session);
 
             json::object player;
@@ -200,12 +197,13 @@ namespace app {
         }
 
         static json::object
-        GetPlayersForState(const std::vector<std::shared_ptr<Player>> &players)
+        GetPlayersForState(const std::vector<SharedPlayer> &players)
         {
             json::object id;
 
             for (const auto &player : players) {
                 json::object player_state;
+
                 const Dog::Position pos = player->GetDog()->GetPosition();
                 player_state["pos"] = {pos.operator*().x, pos.operator*().y};
 
@@ -233,7 +231,7 @@ namespace app {
             return id;
         }
 
-        static std::string SetPlayerAction(std::shared_ptr<Player> player,
+        static std::string SetPlayerAction(SharedPlayer player,
                                            std::string move_dir)
         {
             float dog_speed = player->GetGameSession()->GetMap()->GetDogSpeed();
@@ -299,25 +297,11 @@ namespace app {
 
         std::string GetRecords(int start, int max_items);
 
-        void AddPlayerTimeClock(Player* player);
+        void AddPlayerTimeClock(SharedPlayer player);
 
         void SaveScore(const SharedPlayer player, Game& game);
 
         void DisconnectPlayer(const SharedPlayer player, Game& game);
-
-    private:
-        Players &players_;
-        PlayerTimeClocks clocks_;
-        DatabaseManagerPtr db_manager_;
-    };
-
-    /*-----------------------------------------------JoinGameUseCase-----------------------------------------------*/
-
-    class JoinGameUseCase
-    {
-    public:
-        JoinGameUseCase(Players &players, Game &game)
-            : players_(players), game_(game) {}
 
         std::string Join(std::string &map_id, std::string &user_name, bool random_spawn);
 
@@ -339,9 +323,12 @@ namespace app {
 
     private:
         Players &players_;
+        PlayerTimeClocks clocks_;
+        DatabaseManagerPtr db_manager_;
         Game &game_;
         int random_id_ = 1;
     };
+
 
     /*-----------------------------------------------GameSaveCase-----------------------------------------------*/
 
@@ -351,17 +338,17 @@ namespace app {
         GameSaveCase(std::string state_file, std::optional<int> tick,
                      Players &players, const Game::SessionsByMapId &session)
             : last_tick_(Clock::now()), state_file_(state_file),
-              save_tick_(tick), sessions_(session), players_(players)
+              save_period_(tick), sessions_(session), players_(players)
             {}
 
         void SaveOnTick(bool is_periodic)
         {
-            if (save_tick_.has_value()) {
+            if (save_period_.has_value()) {
                 if (is_periodic) {
                     Clock::time_point this_tick = Clock::now();
                     auto delta =
                         std::chrono::duration_cast<Milliseconds>(this_tick - last_tick_);
-                    if (delta >= model::detail::FromDouble(save_tick_.value())) {
+                    if (delta >= model::detail::FromDouble(save_period_.value())) {
                         SaveState();
                         last_tick_ = Clock::now();
                     }
@@ -397,7 +384,7 @@ namespace app {
     private:
         Clock::time_point last_tick_;
         std::string state_file_;
-        std::optional<int> save_tick_;
+        std::optional<int> save_period_;
         const Game::SessionsByMapId &sessions_;
         Players &players_;
     };
@@ -407,14 +394,34 @@ namespace app {
     class Aplication
     {
     public:
-        Aplication(Game &game, bool set_tick,
-                   std::optional<std::string> state, std::optional<int> tick_state, bool random_spawn, DatabaseManagerPtr&& db, Strand strand)
-            : game_(game), players_(), join_game_(players_, game),
-              game_state_(players_, std::move(db)), set_tick_(set_tick),
-              random_spawn_(random_spawn), api_strand_(strand)
+        Aplication(Game &game,
+                   std::optional<int> tick,
+                   std::optional<std::string> state, 
+                   std::optional<int> tick_state, 
+                   bool random_spawn, 
+                   DatabaseManagerPtr&& db, 
+                   Strand strand)
+            : game_(game), players_()
+            , game_state_(players_, std::move(db), game)
+            , random_spawn_(random_spawn), api_strand_(strand)
+            , tick_(tick)
         {
+            GenerateLoot(Milliseconds{0});
+            if (tick.has_value()) {
+            time_ticker_ = std::make_shared<app::Ticker>(
+                api_strand_, FromInt(*tick), [this](Milliseconds delta) {
+                    this->TickTime(delta.count() / 1000);
+                });
+            time_ticker_->Start();
+
+            loot_ticker_ = std::make_shared<app::Ticker>(api_strand_, game.GetLootGeneratePeriod(), [this](Milliseconds delta){
+                            this->GenerateLoot(delta);
+                        });
+
+            loot_ticker_->Start();
+            }
+
             if (state.has_value()) {
-                std::cout << state.value() << std::endl;
                 save_case_.emplace(state.value(), tick_state, players_,
                                    game_.GetAllSessions());
             }
@@ -422,7 +429,7 @@ namespace app {
 
         std::string JoinGame(std::string &map_id, std::string &user_name)
         {
-            return join_game_.Join(map_id, user_name, random_spawn_);
+            return game_state_.Join(map_id, user_name, random_spawn_);
         }
 
         std::string GetPlayersInfo()
@@ -447,12 +454,12 @@ namespace app {
         {
             std::string res = game_state_.TickTimeUseCase(tick, game_);
             if (save_case_.has_value()) {
-                save_case_.value().SaveOnTick(set_tick_);
+                save_case_.value().SaveOnTick(tick_.has_value());
             }
             return res;
         }
 
-        bool IsTickSet() { return set_tick_; }
+        bool IsTickSet() { return tick_.has_value(); }
 
         void GenerateLoot(model::detail::Milliseconds delta)
         {
@@ -508,10 +515,9 @@ namespace app {
     private:
         Game &game_;
         Players players_;
-        JoinGameUseCase join_game_;
         GameStateUseCase game_state_;
-        bool set_tick_;
         bool random_spawn_;
+        std::optional<int> tick_;
         std::optional<GameSaveCase> save_case_;
         Strand api_strand_;
         std::shared_ptr<Ticker> time_ticker_;

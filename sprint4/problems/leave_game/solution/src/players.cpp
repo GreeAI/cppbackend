@@ -13,7 +13,7 @@ size_t Players::DogMapKeyHasher::operator()(const DogMapId &value) const {
   return x * 2 + y * 2 * 2;
 }
 
-std::pair<Token, std::shared_ptr<Player>>
+std::pair<Token, SharedPlayer>
 Players::AddPlayer(int id, const std::string &name, Dog *dog,
                    const GameSession *session) {
   auto player = std::make_shared<Player>(id, name, dog, session);
@@ -30,7 +30,7 @@ Players::AddPlayer(int id, const std::string &name, Dog *dog,
   return std::make_pair(token, player);
 }
 
-std::shared_ptr<Player> Players::FindByDogIdAndMapId(int dog_id,
+SharedPlayer Players::FindByDogIdAndMapId(int dog_id,
                                                      std::string map_id) const {
   try {
     return dog_map_players_.at(DogMapId(std::make_pair(dog_id, map_id)));
@@ -40,7 +40,7 @@ std::shared_ptr<Player> Players::FindByDogIdAndMapId(int dog_id,
   }
 }
 
-const std::shared_ptr<Player> Players::FindByToken(Token token) {
+const SharedPlayer Players::FindByToken(Token token) {
   try {
     return token_players_.at(token);
   } catch (std::exception &ex) {
@@ -49,7 +49,7 @@ const std::shared_ptr<Player> Players::FindByToken(Token token) {
   }
 }
 
-const Token Players::FindByPlayer(std::shared_ptr<Player> player) const {
+const Token Players::FindByPlayer(SharedPlayer player) const {
   for (auto [token, player_for] : token_players_) {
     if (player_for == player) {
       return token;
@@ -58,7 +58,7 @@ const Token Players::FindByPlayer(std::shared_ptr<Player> player) const {
   throw std::logic_error("FindByPlayer");
 }
 
-const std::vector<std::shared_ptr<Player>>
+const std::vector<SharedPlayer>
 Players::FindPlayersBySession(const GameSession *game_session) {
   if (session_players_.contains(game_session)) {
     return session_players_.at(game_session);
@@ -67,7 +67,7 @@ Players::FindPlayersBySession(const GameSession *game_session) {
   throw std::logic_error("Session is not exists");
 }
 
-void Players::LoadPlayerToken(const std::shared_ptr<Player>  player, const Token& token) {
+void Players::LoadPlayerToken(const SharedPlayer  player, const Token& token) {
   auto [it, add] = token_players_.emplace(std::move(token), player);
 
   if(!add) {
@@ -76,11 +76,11 @@ void Players::LoadPlayerToken(const std::shared_ptr<Player>  player, const Token
 
 }
 
-void Players::LoadPlayerInSession(const std::shared_ptr<Player> player, const GameSession* session) {
+void Players::LoadPlayerInSession(const SharedPlayer player, const GameSession* session) {
   session_players_[session].emplace_back(player);
 }
 
-void Players::DeletePlayer(const std::shared_ptr<Player> erasing_player) {
+void Players::DeletePlayer(const SharedPlayer erasing_player) {
   auto token_it = std::find_if(token_players_.begin(), 
                                 token_players_.end(), 
                                 [erasing_player](const auto& token_and_player){
@@ -88,10 +88,10 @@ void Players::DeletePlayer(const std::shared_ptr<Player> erasing_player) {
 
     token_players_.erase(token_it);
 
-    std::vector<std::shared_ptr<Player>>& players_in_session = session_players_.at(erasing_player->GetGameSession());
+    std::vector<SharedPlayer>& players_in_session = session_players_.at(erasing_player->GetGameSession());
     auto session_it = std::find_if(players_in_session.begin(), 
                                     players_in_session.end(), 
-                                    [erasing_player](const std::shared_ptr<Player> player){
+                                    [erasing_player](const SharedPlayer player){
                                         return player == erasing_player;});
 
     players_in_session.erase(session_it);

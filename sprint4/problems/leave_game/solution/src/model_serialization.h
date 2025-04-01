@@ -41,7 +41,7 @@ public:
     PlayerRepr()
     :id_(0), name_(), token_(""){}
 
-    PlayerRepr(const std::shared_ptr<players::Player> player, const players::Token token)
+    PlayerRepr(const players::SharedPlayer player, const players::Token token)
     :id_(player->GetId()), name_(player->GetName()), token_(*(token)){}
 
     int GetId() const{
@@ -164,7 +164,7 @@ public:
                 for(const auto& dog : session.GetDogs()){
                     dogs_repr.emplace_back(DogRepr(dog));
 
-                    std::shared_ptr<players::Player> player = players.FindByDogIdAndMapId(dog.GetId(), *map_id);
+                    players::SharedPlayer player = players.FindByDogIdAndMapId(dog.GetId(), *map_id);
                     players::Token token = players.FindByPlayer(player);
                     PlayerRepr player_repr(player, token);
                     dogs_repr.back().AddPlayerRepr(player_repr);

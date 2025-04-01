@@ -45,40 +45,42 @@ private:
   const GameSession *session_;
 };
 
+using SharedPlayer = std::shared_ptr<Player>;
+
 class Players {
 public:
 
   Players() = default;
 
-  using TokenPlayer = std::unordered_map<Token, std::shared_ptr<Player>,
+  using TokenPlayer = std::unordered_map<Token, SharedPlayer,
                                          util::TaggedHasher<Token>>;
-  using SessionPlayers = std::unordered_map<const GameSession*, std::vector<std::shared_ptr<Player>>>;
+  using SessionPlayers = std::unordered_map<const GameSession*, std::vector<SharedPlayer>>;
 
   using DogMapId = std::pair<int, Map::Id>;
   struct DogMapKeyHasher {
     size_t operator()(const DogMapId &value) const;
   };
   using DogMapPlayer =
-      std::unordered_map<DogMapId, std::shared_ptr<Player>, DogMapKeyHasher>;
+      std::unordered_map<DogMapId, SharedPlayer, DogMapKeyHasher>;
 
-  std::pair<Token, std::shared_ptr<Player>>
+  std::pair<Token, SharedPlayer>
   AddPlayer(int id, const std::string &name, Dog *dog, const GameSession *session);
 
-  std::shared_ptr<Player> FindByDogIdAndMapId(int dog_id, std::string map_id) const;
+  SharedPlayer FindByDogIdAndMapId(int dog_id, std::string map_id) const;
 
-  const std::shared_ptr<Player> FindByToken(Token token);
+  const SharedPlayer FindByToken(Token token);
   
-  const Token FindByPlayer(std::shared_ptr<Player> player) const;
+  const Token FindByPlayer(SharedPlayer player) const;
 
   const TokenPlayer GetPlayers() { return token_players_; }
 
-  const std::vector<std::shared_ptr<Player>> FindPlayersBySession(const GameSession* game_session);
+  const std::vector<SharedPlayer> FindPlayersBySession(const GameSession* game_session);
 
-  void LoadPlayerToken(const std::shared_ptr<Player> player, const Token& token);
+  void LoadPlayerToken(const SharedPlayer player, const Token& token);
 
-  void LoadPlayerInSession(const std::shared_ptr<Player> player, const GameSession* session);
+  void LoadPlayerInSession(const SharedPlayer player, const GameSession* session);
 
-  void DeletePlayer(const std::shared_ptr<Player> erasing_player);
+  void DeletePlayer(const SharedPlayer erasing_player);
 
 private:
   TokenPlayer token_players_;

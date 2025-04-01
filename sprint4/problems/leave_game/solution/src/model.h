@@ -36,6 +36,8 @@ inline Milliseconds FromInt(int delta){
 
 } // namespace detail
 
+const double HALF_ROAD = 0.4;
+
 inline bool operator<(const PairDouble& lhs, const PairDouble& rhs){
     return std::tuple(lhs.x, lhs.y) < std::tuple(rhs.x, rhs.x);
 }

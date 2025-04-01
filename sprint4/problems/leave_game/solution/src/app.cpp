@@ -67,9 +67,9 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
         return std::make_pair("unknownToken", json::serialize(error_code));
     }
 
-    /*----------------------------------------JoibGameUseCase----------------------------------------*/
+/*----------------------------------------GameStateUseCase----------------------------------------*/
 
-    std::string JoinGameUseCase::Join(std::string &map_id, std::string &user_name, bool random_spawn)
+    std::string GameStateUseCase::Join(std::string &map_id, std::string &user_name, bool random_spawn)
     {
 
         if (game_.FindMap(model::Map::Id(map_id)) == nullptr) {
@@ -87,18 +87,23 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
             game_session = game_.AddSession(model::Map::Id(map_id));
         }
 
-        model::Dog *dog = game_session->AddDog(
-            random_id_, model::Dog::Name(user_name),
-            /*RandomPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())*/
-            model::Dog::Position(GetFirstPos(
-                game_.FindMap(model::Map::Id(map_id))->GetRoads())), // Delete commit
-            model::Dog::Speed({0., 0.}), model::Direction::NORTH);
+        Dog::Name dog_name(user_name);
+        Dog::Position dog_pos = (random_spawn) 
+            ? Dog::Position(Map::GetRandomPos(game_.FindMap(model::Map::Id(map_id))->GetRoads())) 
+            : Dog::Position(Map::GetFirstPos(game_.FindMap(model::Map::Id(map_id))->GetRoads()));
+        Dog::Speed dog_speed({0, 0});
+        Direction dog_dir = Direction::NORTH;
+
+        Dog* dog = game_session->AddDog(random_id_, dog_name, dog_pos, 
+                                        dog_speed, dog_dir);
 
         game_session->UpdateLoot(game_session->GetDogs().size() - game_session->GetLootObjects().size());
 
         std::pair<players::Token, SharedPlayer> player =
             players_.AddPlayer(random_id_, user_name, dog, game_session);
         random_id_++;
+
+        AddPlayerTimeClock(player.second);
 
         json::object respons_body;
         respons_body["authToken"] = *player.first;
@@ -108,7 +113,7 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
     }
 
     std::pair<double, double>
-    JoinGameUseCase::RandomPos(const model::Map::Roads &roads) const
+    GameStateUseCase::RandomPos(const model::Map::Roads &roads) const
     {
         double road_id = GetRandomInt(0, roads.size());
         const model::Road &road = roads[road_id];
@@ -124,13 +129,11 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
     }
 
     model::PairDouble
-    JoinGameUseCase::GetFirstPos(const model::Map::Roads &roads) const
+    GameStateUseCase::GetFirstPos(const model::Map::Roads &roads) const
     {
         const model::Point &pos = roads.begin()->GetStart();
         return {static_cast<double>(pos.x), static_cast<double>(pos.y)};
     }
-
-    /*----------------------------------------GameStateUseCase----------------------------------------*/
 
     void GameStateUseCase::GenerateLoot(model::detail::Milliseconds delta, model::Game &game)
     {
@@ -145,15 +148,15 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
         for(const auto& [name, score, time] : res.iter<std::string, int, double>()){
             json::object entry;
             entry["name"] = name;
-            entry["score"] = score;
             entry["playTime"] = time;
+            entry["score"] = score;
             records.push_back(entry);
         }
 
         return json::serialize(records);
     }
 
-    void GameStateUseCase::AddPlayerTimeClock(Player* player) {
+    void GameStateUseCase::AddPlayerTimeClock(SharedPlayer player) {
        auto emplace_result = clocks_.emplace(player, PlayerTimeClock());
         if(emplace_result.second){
             PlayerTimeClock& clock = emplace_result.first->second;
