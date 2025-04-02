@@ -27,6 +27,7 @@ namespace app {
     using Clock = std::chrono::steady_clock;
     using Strand = net::strand<net::io_context::executor_type>;
     using DatabaseManagerPtr = std::unique_ptr<db_connection::DatabaseManager>;
+    const int kMillisecondsInSecond = 1000;
 
     class Ticker : public std::enable_shared_from_this<Ticker>
     {
@@ -168,17 +169,7 @@ namespace app {
 
         GameStateUseCase(Players &players, DatabaseManagerPtr&& db, Game &game) : players_(players), db_manager_(std::move(db)), game_(game) {}
 
-        std::string GetState(Token token) const 
-        {
-            const GameSession *game_session = players_.FindByToken(token)->GetGameSession();
-
-            auto players = players_.FindPlayersBySession(game_session);
-
-            json::object player;
-            player["players"] = GetPlayersForState(players);
-            player["lostObjects"] = GetLootObject(game_session);
-            return json::serialize(player);
-        }
+        std::string GetState(Token token) const;
 
         static json::object GetLootObject(const GameSession *session)
         {
@@ -221,6 +212,7 @@ namespace app {
                     player_state["dir"] = "R";
                 } else {
                     player_state["dir"] = "Unknown";
+                    assert(false);
                 }
 
                 player_state["bag"] = GetBagItems(player->GetDog()->GetBag());
@@ -250,6 +242,8 @@ namespace app {
             } else if (move_dir == "R") {
                 new_speed = Dog::Speed({dog_speed, 0});
                 new_dir = Direction::EAST;
+            } else {
+                assert(false);
             }
 
             player->GetDog()->SetSpeed(new_speed);
@@ -265,7 +259,7 @@ namespace app {
                 auto inactivity_time = clock.GetInactivityTime();
                 if(inactivity_time.has_value()){
                     int converted_time_ms = static_cast<double>(inactivity_time->count());
-                    if(converted_time_ms >= (game.GetDogRetirementTime() * 1000)){
+                    if(converted_time_ms >= (game.GetDogRetirementTime() * kMillisecondsInSecond)){
                         retired_players.push_back(player);
                     }
                 }
@@ -376,7 +370,8 @@ namespace app {
                 boost::archive::text_iarchive input_archive{fstrm};
                 input_archive >> game_state;
                 return game_state;
-            } catch (...) {
+            } catch (std::exception& ex) {
+                std::cout << ex.what() << std::endl;
                 return game_state;
             }
         }
@@ -410,7 +405,7 @@ namespace app {
             if (tick.has_value()) {
             time_ticker_ = std::make_shared<app::Ticker>(
                 api_strand_, FromInt(*tick), [this](Milliseconds delta) {
-                    this->TickTime(delta.count() / 1000);
+                    this->TickTime(delta.count() / kMillisecondsInSecond);
                 });
             time_ticker_->Start();
 
@@ -517,9 +512,9 @@ namespace app {
         Players players_;
         GameStateUseCase game_state_;
         bool random_spawn_;
+        Strand api_strand_;
         std::optional<int> tick_;
         std::optional<GameSaveCase> save_case_;
-        Strand api_strand_;
         std::shared_ptr<Ticker> time_ticker_;
         std::shared_ptr<Ticker> loot_ticker_;
     };

@@ -1,4 +1,5 @@
-# pragma once
+#pragma once
+
 #include <pqxx/pqxx>
 #include <memory>
 #include <mutex>

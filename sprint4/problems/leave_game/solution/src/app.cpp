@@ -112,6 +112,18 @@ Milliseconds PlayerTimeClock::GetPlaytime() const{
         return json::serialize(respons_body);
     }
 
+    std::string GameStateUseCase::GetState(Token token) const 
+        {
+            const GameSession *game_session = players_.FindByToken(token)->GetGameSession();
+
+            auto players = players_.FindPlayersBySession(game_session);
+
+            json::object player;
+            player["players"] = GetPlayersForState(players);
+            player["lostObjects"] = GetLootObject(game_session);
+            return json::serialize(player);
+        }
+
     std::pair<double, double>
     GameStateUseCase::RandomPos(const model::Map::Roads &roads) const
     {

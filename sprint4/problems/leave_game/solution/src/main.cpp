@@ -111,7 +111,7 @@ int main(int argc, const char *argv[]) {
     return EXIT_FAILURE;
   }
   try {
-    const static int NUM_THREADS = std::thread::hardware_concurrency();
+    const int NUM_THREADS = std::thread::hardware_concurrency();
     const char *DB_URL = std::getenv("GAME_DB_URL");
     if (!DB_URL) {
       throw std::runtime_error("GAME_DB_URL is not specified");
